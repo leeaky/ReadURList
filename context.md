@@ -1,4 +1,4 @@
-# context.md — "Second Read" (working name)
+# context.md — ReadURList
 
 ## One-line pitch
 Saved URLs become a personal knowledge corpus. The system reaches out at unpredictable moments with genuine connections and tensions between things you've saved, and you can converse with the corpus at any time — dialogue with your own accumulated thinking, not another read-later graveyard.

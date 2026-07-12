@@ -1,7 +1,7 @@
 [project]
 name = "second-read"
 version = "0.1.0"
-description = "Saved URLs become a personal knowledge corpus — Telegram bot with connection pings"
+description = "ReadURList — saved URLs become a personal knowledge corpus via Telegram"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

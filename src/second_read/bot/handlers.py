@@ -7,7 +7,7 @@ from second_read.connect import connect_new_claims
 from second_read.converse import answer_from_corpus
 from second_read.db import Claim, get_session
 from second_read.ingest import ingest_url
-from second_read.ingest.extract import find_urls
+from second_read.ingest.extract import FetchError, find_urls
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,10 @@ async def handle_message(update, context) -> None:
         await update.message.reply_text("Saving…")
         try:
             item = await asyncio.to_thread(ingest_url, url, llm, settings)
+        except FetchError as exc:
+            logger.warning("Fetch failed for %s: %s", url, exc)
+            await update.message.reply_text(str(exc))
+            return
         except Exception as exc:
             logger.exception("Ingest failed for %s", url)
             await update.message.reply_text(f"Couldn't save that URL: {exc}")
@@ -82,7 +86,7 @@ async def handle_start(update, context) -> None:
     if not update.effective_user or update.effective_user.id != settings.telegram_user_id:
         return
     await update.message.reply_text(
-        "Second Read is listening.\n"
+        "ReadURList is listening.\n"
         "• Paste a URL to save it (short ack only).\n"
         "• Ask anything about your corpus anytime.\n"
         "• I'll ping when a genuine connection appears — silence otherwise."

@@ -26,7 +26,7 @@ def main() -> None:
     app = build_app(settings, llm)
 
     logging.getLogger(__name__).info(
-        "Second Read starting (allowlisted user=%s, llm=groq)",
+        "ReadURList starting (allowlisted user=%s, llm=groq)",
         settings.telegram_user_id,
     )
     app.run_polling(allowed_updates=["message"])

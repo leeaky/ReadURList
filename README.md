@@ -1,8 +1,8 @@
-# Second Read
+# ReadURList
 
 Personal knowledge corpus over Telegram. Paste URLs, get short save-time acks, converse with your corpus, and receive rare pings when genuine claim-level connections appear.
 
-See [context.md](context.md) for product principles.
+See [context.md](context.md) for product principles and [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## Setup
 
