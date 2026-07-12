@@ -1,0 +1,27 @@
+[project]
+name = "second-read"
+version = "0.1.0"
+description = "Saved URLs become a personal knowledge corpus — Telegram bot with connection pings"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "python-telegram-bot[job-queue]>=21.0",
+  "sqlalchemy>=2.0",
+  "openai>=1.40",
+  "sentence-transformers>=3.0",
+  "trafilatura>=1.12",
+  "httpx>=0.27",
+  "python-dotenv>=1.0",
+  "pydantic>=2.0",
+  "pydantic-settings>=2.0",
+]
+
+[project.scripts]
+second-read = "second_read.main:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
