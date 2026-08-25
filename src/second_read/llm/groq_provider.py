@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from typing import Any, Optional, Sequence
+from typing import Any, Optional
 
 from openai import APIStatusError, OpenAI, RateLimitError
 
@@ -33,20 +33,10 @@ def _extract_json(text: str) -> str:
 
 
 class GroqProvider(LLMProvider):
-    """Groq chat (OpenAI-compatible) + local sentence-transformers embeddings."""
+    """Groq chat via the OpenAI-compatible API."""
 
-    def __init__(self, api_key: str, *, embed_model: str = "all-MiniLM-L6-v2") -> None:
+    def __init__(self, api_key: str) -> None:
         self._client = OpenAI(api_key=api_key, base_url=GROQ_BASE_URL)
-        self._embed_model_name = embed_model
-        self._embedder = None
-
-    def _get_embedder(self):
-        if self._embedder is None:
-            from sentence_transformers import SentenceTransformer
-
-            logger.info("Loading local embedding model %s …", self._embed_model_name)
-            self._embedder = SentenceTransformer(self._embed_model_name)
-        return self._embedder
 
     def complete(
         self,
@@ -92,7 +82,14 @@ class GroqProvider(LLMProvider):
                 return content
             except (RateLimitError, APIStatusError) as exc:
                 status = getattr(exc, "status_code", None)
-                retryable = isinstance(exc, RateLimitError) or status in {408, 429, 500, 502, 503, 504}
+                retryable = isinstance(exc, RateLimitError) or status in {
+                    408,
+                    429,
+                    500,
+                    502,
+                    503,
+                    504,
+                }
                 last_exc = exc
                 if not retryable or attempt == _MAX_LLM_ATTEMPTS:
                     raise
@@ -108,15 +105,3 @@ class GroqProvider(LLMProvider):
                 )
                 time.sleep(wait)
         raise last_exc or RuntimeError("Groq complete failed")
-
-    def embed(self, texts: Sequence[str], *, model: str) -> list[list[float]]:
-        if not texts:
-            return []
-        # `model` arg kept for interface compatibility; local model comes from settings
-        name = model or self._embed_model_name
-        if name != self._embed_model_name:
-            self._embed_model_name = name
-            self._embedder = None
-        embedder = self._get_embedder()
-        vectors = embedder.encode(list(texts), normalize_embeddings=True)
-        return [v.tolist() for v in vectors]

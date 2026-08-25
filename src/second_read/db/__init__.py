@@ -70,76 +70,6 @@ class Item(Base):
         DateTime(timezone=True), nullable=True
     )
 
-    # Legacy columns kept so unused connect/converse modules still import.
-    summary_one_liner: Mapped[str] = mapped_column(String(1024), default="")
-    surfaced_count: Mapped[int] = mapped_column(Integer, default=0)
-
-    claims: Mapped[list["Claim"]] = relationship(back_populates="item")
-
-
-class Claim(Base):
-    __tablename__ = "claims"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    item_id: Mapped[int] = mapped_column(ForeignKey("items.id"), index=True)
-    text: Mapped[str] = mapped_column(Text)
-    embedding_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-
-    item: Mapped[Item] = relationship(back_populates="claims")
-
-
-class Relationship(Base):
-    __tablename__ = "relationships"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    claim_a_id: Mapped[int] = mapped_column(ForeignKey("claims.id"), index=True)
-    claim_b_id: Mapped[int] = mapped_column(ForeignKey("claims.id"), index=True)
-    type: Mapped[str] = mapped_column(String(32))
-    strength: Mapped[float] = mapped_column(Float, default=0.5)
-    rationale: Mapped[str] = mapped_column(Text)
-    surfaced_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-
-    claim_a: Mapped[Claim] = relationship(foreign_keys=[claim_a_id])
-    claim_b: Mapped[Claim] = relationship(foreign_keys=[claim_b_id])
-
-
-class Ping(Base):
-    __tablename__ = "pings"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    relationship_id: Mapped[int] = mapped_column(ForeignKey("relationships.id"))
-    hook: Mapped[str] = mapped_column(Text)
-    analysis: Mapped[str] = mapped_column(Text)
-    question: Mapped[str] = mapped_column(Text)
-    sent_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-    replied_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-
-    relationship: Mapped[Relationship] = relationship()
-
-
-class Message(Base):
-    __tablename__ = "messages"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    telegram_message_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    role: Mapped[str] = mapped_column(String(16))
-    text: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-
 
 class Cluster(Base):
     __tablename__ = "clusters"
@@ -190,13 +120,6 @@ class DigestRun(Base):
     sent_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
-
-
-class Meta(Base):
-    __tablename__ = "meta"
-
-    key: Mapped[str] = mapped_column(String(128), primary_key=True)
-    value: Mapped[str] = mapped_column(Text)
 
 
 _engine = None

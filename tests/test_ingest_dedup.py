@@ -14,9 +14,6 @@ class FakeLLM:
             ' "priority": 3}'
         )
 
-    def embed(self, texts, *, model):
-        return [[0.0] * 8 for _ in texts]
-
 
 def test_same_url_does_not_insert_second_item(tmp_path, monkeypatch):
     db = tmp_path / "t.db"

@@ -58,7 +58,6 @@ def migrate(sqlite_path: Path) -> int:
                 extracted_text=row["extracted_text"] if "extracted_text" in keys else "",
                 priority=int(row["priority"]) if "priority" in keys and row["priority"] else 3,
                 note=row["note"] if "note" in keys else None,
-                summary_one_liner=snapshot[:1024],
             )
             session.add(item)
             inserted += 1

@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Product center from claim-connection pings to **capture → snapshot → daily ranked reads**.
-- Ingest output is a 2–4 sentence snapshot plus subject, topics, keywords, and priority (claims/connect/converse/pings unhooked).
+- Ingest output is a 2–4 sentence snapshot plus subject, topics, keywords, and priority.
 - Persistence target is **Supabase Postgres**; worker stays on the always-on NUC.
 - Groq chat retries on 429/5xx during bulk ingest.
 
@@ -21,7 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - Localhost FastAPI browse UI (replaced by the Vercel site).
-- Ping scheduler as the live loop.
+- Connect / converse / ping modules, claim embeddings, and `sentence-transformers`.
+- Legacy item columns `summary_one_liner` and `surfaced_count`.
 
 ## [0.1.0] - 2026-07-11
 

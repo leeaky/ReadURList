@@ -17,9 +17,7 @@ create table if not exists items (
   note text,
   similar_to_item_id bigint references items (id),
   created_at timestamptz not null default now(),
-  read_at timestamptz,
-  summary_one_liner varchar(1024) not null default '',
-  surfaced_count integer not null default 0
+  read_at timestamptz
 );
 
 create index if not exists items_created_at_idx on items (created_at desc);

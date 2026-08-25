@@ -19,10 +19,7 @@ def main() -> None:
     settings.ensure_data_dir()
     init_db(settings.database_url)
 
-    llm = GroqProvider(
-        api_key=settings.groq_api_key,
-        embed_model=settings.model_embed,
-    )
+    llm = GroqProvider(api_key=settings.groq_api_key)
     app = build_app(settings, llm)
 
     logging.getLogger(__name__).info(
