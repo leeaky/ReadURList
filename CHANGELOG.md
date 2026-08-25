@@ -8,15 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Product name from working title "Second Read" to **ReadURList** (docs, `/start` copy, packaging description).
+- Product center from claim-connection pings to **capture → snapshot → daily ranked reads**.
+- Ingest output is a 2–4 sentence snapshot plus subject, topics, keywords, and priority (claims/connect/converse/pings unhooked).
+- Persistence target is **Supabase Postgres**; worker stays on the always-on NUC.
+- Groq chat retries on 429/5xx during bulk ingest.
 
 ### Added
-- Meta corpus intents (DB-backed, no embedding gate): list saves, summarise/overview, are-related.
-- Title + one-liner retrieval alongside claim embeddings for content questions.
-- Article fetch hardening: browser-like headers, retries with backoff/`Retry-After` on 429/5xx, clearer rate-limit errors in Telegram.
+- Multi-URL paste in Telegram (sequential `n/N` snapshots).
+- Daily cluster + ranking job, `daily_picks`, Telegram digest with Mark read buttons (`/digest` to run now).
+- Next.js website (`web/`) on Vercel: Today, Unread, Topics, Clusters, All, reading path, password gate, mark read.
+- SQLite → Postgres migrate script; pytest suite and GitHub Action.
 
-### Fixed
-- Softened converse similarity floor (0.25; small corpora keep top‑k) so borderline content questions reach Groq instead of the empty-corpus reply.
+### Removed
+- Localhost FastAPI browse UI (replaced by the Vercel site).
+- Ping scheduler as the live loop.
 
 ## [0.1.0] - 2026-07-11
 

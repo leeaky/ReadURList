@@ -18,7 +18,6 @@ class Settings(BaseSettings):
 
     groq_api_key: str
 
-    # Groq chat models (free tier). Embeddings run locally via sentence-transformers.
     model_ingest: str = "llama-3.3-70b-versatile"
     model_connect: str = "llama-3.3-70b-versatile"
     model_ping: str = "llama-3.3-70b-versatile"
@@ -27,10 +26,7 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite:///./data/second_read.db"
 
-    quiet_hours_start: int = 9
-    quiet_hours_end: int = 21
-    max_pings_per_day: int = 2
-    ping_check_interval_minutes: int = 45
+    digest_hour: int = 8
 
     def ensure_data_dir(self) -> None:
         if self.database_url.startswith("sqlite:///"):

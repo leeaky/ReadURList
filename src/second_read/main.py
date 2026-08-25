@@ -26,10 +26,11 @@ def main() -> None:
     app = build_app(settings, llm)
 
     logging.getLogger(__name__).info(
-        "ReadURList starting (allowlisted user=%s, llm=groq)",
+        "ReadURList starting (allowlisted user=%s, llm=groq, digest=%02d:00)",
         settings.telegram_user_id,
+        settings.digest_hour,
     )
-    app.run_polling(allowed_updates=["message"])
+    app.run_polling(allowed_updates=["message", "callback_query"])
 
 
 if __name__ == "__main__":
