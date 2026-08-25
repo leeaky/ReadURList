@@ -1,7 +1,7 @@
 [project]
 name = "second-read"
-version = "0.1.0"
-description = "ReadURList — saved URLs become a personal knowledge corpus via Telegram"
+version = "0.2.0"
+description = "ReadURList — saved URLs become a ranked personal reading corpus via Telegram"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -14,10 +14,16 @@ dependencies = [
   "python-dotenv>=1.0",
   "pydantic>=2.0",
   "pydantic-settings>=2.0",
+  "psycopg[binary]>=3.1",
 ]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+embed = ["sentence-transformers>=3.0"]
 
 [project.scripts]
 second-read = "second_read.main:main"
+second-read-digest = "second_read.rank.run:main"
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -25,3 +31,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

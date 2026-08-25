@@ -5,11 +5,14 @@ import logging
 import re
 from typing import Any, Optional, Sequence
 
-from openai import OpenAI
+from openai import APIStatusError, OpenAI, RateLimitError
 
 from second_read.llm.base import LLMProvider
 
 logger = logging.getLogger(__name__)
+
+_MAX_LLM_ATTEMPTS = 4
+_LLM_BACKOFF_SEC = 1.5
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 
@@ -78,12 +81,33 @@ class GroqProvider(LLMProvider):
         messages.append({"role": "user", "content": user_prompt})
         kwargs["messages"] = messages
 
-        response = self._client.chat.completions.create(**kwargs)
-        content = response.choices[0].message.content or ""
-        if schema is not None:
-            content = _extract_json(content)
-            json.loads(content)
-        return content
+        last_exc: Exception | None = None
+        for attempt in range(1, _MAX_LLM_ATTEMPTS + 1):
+            try:
+                response = self._client.chat.completions.create(**kwargs)
+                content = response.choices[0].message.content or ""
+                if schema is not None:
+                    content = _extract_json(content)
+                    json.loads(content)
+                return content
+            except (RateLimitError, APIStatusError) as exc:
+                status = getattr(exc, "status_code", None)
+                retryable = isinstance(exc, RateLimitError) or status in {408, 429, 500, 502, 503, 504}
+                last_exc = exc
+                if not retryable or attempt == _MAX_LLM_ATTEMPTS:
+                    raise
+                import time
+
+                wait = _LLM_BACKOFF_SEC * (2 ** (attempt - 1))
+                logger.warning(
+                    "Groq %s (attempt %s/%s); retry in %.1fs",
+                    status or exc.__class__.__name__,
+                    attempt,
+                    _MAX_LLM_ATTEMPTS,
+                    wait,
+                )
+                time.sleep(wait)
+        raise last_exc or RuntimeError("Groq complete failed")
 
     def embed(self, texts: Sequence[str], *, model: str) -> list[list[float]]:
         if not texts:

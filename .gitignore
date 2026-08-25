@@ -1,4 +1,5 @@
 .env
+.DS_Store
 .venv/
 venv/
 __pycache__/
@@ -12,4 +13,9 @@ build/
 .ruff_cache/
 data/
 *.db
-.DS_Store
+web/node_modules/
+web/.next/
+web/.env
+web/.env.local
+supabase/.temp/
+

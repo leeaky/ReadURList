@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.readurlist.worker</string>
+  <key>WorkingDirectory</key>
+  <string>/Users/YOU/dev/ReadURList</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/YOU/dev/ReadURList/.venv/bin/second-read</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/YOU/dev/ReadURList/data/worker.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/YOU/dev/ReadURList/data/worker.err</string>
+</dict>
+</plist>

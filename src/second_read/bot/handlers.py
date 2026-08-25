@@ -3,11 +3,10 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from second_read.connect import connect_new_claims
-from second_read.converse import answer_from_corpus
-from second_read.db import Claim, get_session
+from second_read.db import mark_item_read
 from second_read.ingest import ingest_url
 from second_read.ingest.extract import FetchError, find_urls
+from second_read.rank.run import run_digest_job
 
 logger = logging.getLogger(__name__)
 
@@ -27,58 +26,32 @@ async def handle_message(update, context) -> None:
     urls = find_urls(text)
 
     if urls:
-        url = urls[0]
-        await update.message.reply_text("Saving…")
-        try:
-            item = await asyncio.to_thread(ingest_url, url, llm, settings)
-        except FetchError as exc:
-            logger.warning("Fetch failed for %s: %s", url, exc)
-            await update.message.reply_text(str(exc))
-            return
-        except Exception as exc:
-            logger.exception("Ingest failed for %s", url)
-            await update.message.reply_text(f"Couldn't save that URL: {exc}")
-            return
-
-        ack = f"*{_escape_md(item.title)}*\n{_escape_md(item.summary_one_liner)}"
-        await update.message.reply_text(ack, parse_mode="Markdown")
-
-        session = get_session()
-        try:
-            claim_ids = [
-                c.id for c in session.query(Claim).filter_by(item_id=item.id).all()
-            ]
-        finally:
-            session.close()
-
-        if claim_ids:
+        total = len(urls)
+        for index, url in enumerate(urls, 1):
+            prefix = f"{index}/{total} " if total > 1 else ""
+            await update.message.reply_text(f"{prefix}Saving…")
             try:
-                created = await asyncio.to_thread(
-                    connect_new_claims, claim_ids, llm, settings
-                )
-                logger.info(
-                    "Connected %s new relationships for item %s",
-                    len(created),
-                    item.id,
-                )
-            except Exception:
-                logger.exception("Connect failed for item %s", item.id)
+                item, created = await asyncio.to_thread(ingest_url, url, llm, settings)
+            except FetchError as exc:
+                logger.warning("Fetch failed for %s: %s", url, exc)
+                await update.message.reply_text(f"{prefix}{exc}")
+                continue
+            except Exception as exc:
+                logger.exception("Ingest failed for %s", url)
+                await update.message.reply_text(f"{prefix}Couldn't save that URL: {exc}")
+                continue
+
+            title = _escape_md(item.title or url)
+            snapshot = _escape_md(item.snapshot or "")
+            status = "" if created else "Already saved.\n"
+            ack = f"{prefix}{status}*{title}*\n{snapshot}".strip()
+            await update.message.reply_text(ack, parse_mode="Markdown")
         return
 
-    try:
-        reply = await asyncio.to_thread(
-            answer_from_corpus,
-            text,
-            llm,
-            settings,
-            telegram_message_id=update.message.message_id,
-        )
-    except Exception as exc:
-        logger.exception("Converse failed")
-        await update.message.reply_text(f"Something went wrong answering: {exc}")
-        return
-
-    await update.message.reply_text(reply, disable_web_page_preview=True)
+    await update.message.reply_text(
+        "Paste one or more http(s) URLs to save them.\n"
+        "Browse and mark read on the website. Send /digest to run today's ranking now."
+    )
 
 
 async def handle_start(update, context) -> None:
@@ -87,10 +60,53 @@ async def handle_start(update, context) -> None:
         return
     await update.message.reply_text(
         "ReadURList is listening.\n"
-        "• Paste a URL to save it (short ack only).\n"
-        "• Ask anything about your corpus anytime.\n"
-        "• I'll ping when a genuine connection appears — silence otherwise."
+        "• Paste a URL (or several) to save a snapshot.\n"
+        "• Daily digest: ranked unread reads, with Mark read buttons.\n"
+        "• Browse the corpus on the website (see README)."
     )
+
+
+async def handle_digest(update, context) -> None:
+    settings = context.application.bot_data["settings"]
+    if not update.effective_user or update.effective_user.id != settings.telegram_user_id:
+        return
+    await update.message.reply_text("Running ranking…")
+    try:
+        sent = await run_digest_job(context.bot, settings, force=True)
+    except Exception as exc:
+        logger.exception("Manual digest failed")
+        await update.message.reply_text(f"Digest failed: {exc}")
+        return
+    if sent:
+        return
+    await update.message.reply_text("Ranking updated. Digest already sent today — not sending again.")
+
+
+async def handle_read_callback(update, context) -> None:
+    settings = context.application.bot_data["settings"]
+    query = update.callback_query
+    if not query or not query.data:
+        return
+    if not update.effective_user or update.effective_user.id != settings.telegram_user_id:
+        await query.answer("Not allowed.")
+        return
+    if not query.data.startswith("read:"):
+        await query.answer()
+        return
+    try:
+        item_id = int(query.data.split(":", 1)[1])
+    except ValueError:
+        await query.answer("Bad id")
+        return
+    item = mark_item_read(item_id, read=True)
+    if item is None:
+        await query.answer("Not found")
+        return
+    await query.answer("Marked read")
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        logger.debug("Could not clear markup after mark-read")
 
 
 def _escape_md(text: str) -> str:
