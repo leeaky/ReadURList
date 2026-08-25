@@ -4,7 +4,7 @@
 Saved URLs become a personal reading corpus. Telegram captures them with an AI snapshot; a daily job ranks what you should actually read; a website reorganizes the backlog.
 
 ## What this is NOT (anti-goals)
-- Not a mute-if-empty connection-ping product (that loop is unhooked). Chat is capture + digest.
+- Not a connection-ping or corpus-Q&A product. Chat is capture + digest.
 - Not a public multi-user app. The website is password-gated; the bot is allowlisted to one Telegram user.
 - Not a recap machine. Daily picks must prefer unread items that represent dense topics in *your* backlog, not a restatement of one save.
 
@@ -25,4 +25,4 @@ Unread only. Topic demand 0.35, cluster centrality 0.25, recency 0.15, path nove
 Week two: are tabs actually closed, and do digest picks get marked read? If not, tune ranking before adding features.
 
 ## Deliberate omissions
-Connection pings, corpus Q&A, claim embeddings, bookmarklet, public auth, FastAPI localhost UI, cloud worker hosting (Oracle/Fly). NUC is the host.
+Claim embeddings, connection pings, corpus Q&A, bookmarklet, public auth, FastAPI localhost UI, cloud worker hosting (Oracle/Fly). NUC is the host.

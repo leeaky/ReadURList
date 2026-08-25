@@ -62,7 +62,6 @@ def ingest_url(
             extracted_text=text,
             priority=result.priority,
             note=note_clean,
-            summary_one_liner=result.snapshot.split(". ")[0][:1024],
         )
         session.add(item)
         session.commit()

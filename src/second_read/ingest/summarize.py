@@ -59,16 +59,11 @@ def summarize_article(
         priority_int = 3
     priority_int = min(max(priority_int, 1), 5)
     snapshot = (data.get("snapshot") or "").strip()
-    one_liner = (data.get("summary_one_liner") or "").strip()
     return IngestResult(
         title=(data.get("title") or title_hint).strip() or title_hint,
-        snapshot=snapshot or one_liner,
+        snapshot=snapshot,
         subject=(data.get("subject") or "").strip(),
         topics=_clip_list(data.get("topics"), cap=8),
         keywords=_clip_list(data.get("keywords"), cap=15),
         priority=priority_int,
     )
-
-
-# Old name kept so leftover call sites fail loudly if re-enabled.
-summarize_and_claim = summarize_article

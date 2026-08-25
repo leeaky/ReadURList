@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Sequence
+from typing import Any, Optional
 
 
 class LLMProvider(ABC):
@@ -18,7 +18,3 @@ class LLMProvider(ABC):
         temperature: float = 0.3,
     ) -> str:
         """Return text completion. If schema is set, return JSON matching that schema."""
-
-    @abstractmethod
-    def embed(self, texts: Sequence[str], *, model: str) -> list[list[float]]:
-        """Return embedding vectors for each input text."""
