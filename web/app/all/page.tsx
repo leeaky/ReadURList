@@ -14,8 +14,9 @@ export default async function AllPage({
   let query = db
     .from("items")
     .select(
-      "id, url, title, snapshot, subject, topics, keywords, created_at, read_at, similar_to_item_id",
+      "id, url, title, snapshot, subject, topics, keywords, created_at, read_at, similar_to_item_id, ingest_status",
     )
+    .eq("ingest_status", "ready")
     .order("created_at", { ascending: false });
   if (filter === "unread") {
     query = query.is("read_at", null);
