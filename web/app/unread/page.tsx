@@ -14,9 +14,10 @@ export default async function UnreadPage({
   let query = db
     .from("items")
     .select(
-      "id, url, title, snapshot, subject, topics, keywords, created_at, read_at, similar_to_item_id",
+      "id, url, title, snapshot, subject, topics, keywords, created_at, read_at, similar_to_item_id, ingest_status",
     )
     .is("read_at", null)
+    .eq("ingest_status", "ready")
     .order("created_at", { ascending: false });
   if (stale === "1") {
     const cutoff = new Date();

@@ -60,6 +60,7 @@ class Item(Base):
     extracted_text: Mapped[str] = mapped_column(Text, default="")
     priority: Mapped[int] = mapped_column(Integer, default=3)
     note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    ingest_status: Mapped[str] = mapped_column(String(32), default="ready")
     similar_to_item_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("items.id"), nullable=True
     )
@@ -163,10 +164,15 @@ def _migrate_sqlite(engine) -> None:
             "note": "ALTER TABLE items ADD COLUMN note TEXT",
             "similar_to_item_id": "ALTER TABLE items ADD COLUMN similar_to_item_id INTEGER",
             "read_at": "ALTER TABLE items ADD COLUMN read_at DATETIME",
+            "ingest_status": "ALTER TABLE items ADD COLUMN ingest_status VARCHAR(32) NOT NULL DEFAULT 'ready'",
         }
         for name, sql in alters.items():
             if name not in columns:
                 conn.exec_driver_sql(sql)
+        conn.exec_driver_sql(
+            "UPDATE items SET ingest_status = 'ready' "
+            "WHERE ingest_status IS NULL OR ingest_status = ''"
+        )
         if "summary_one_liner" in columns:
             conn.exec_driver_sql(
                 "UPDATE items SET snapshot = summary_one_liner "
