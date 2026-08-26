@@ -72,6 +72,26 @@ export function Nav({ current }: { current: string }) {
   );
 }
 
+export function Brand({ tagline }: { tagline: string }) {
+  return (
+    <header className="brand">
+      <Link href="/" className="brand-lockup">
+        <img
+          className="brand-logo"
+          src="/logo.png"
+          alt=""
+          width={640}
+          height={640}
+        />
+        <div>
+          <h1>ReadURList</h1>
+          <p className="tagline">{tagline}</p>
+        </div>
+      </Link>
+    </header>
+  );
+}
+
 export function Shell({
   current,
   children,
@@ -81,12 +101,7 @@ export function Shell({
 }) {
   return (
     <main className="page">
-      <header className="brand">
-        <div>
-          <h1>ReadURList</h1>
-          <p className="tagline">Capture in Telegram. Reorganize here.</p>
-        </div>
-      </header>
+      <Brand tagline="Capture in Telegram. Reorganize here." />
       <Nav current={current} />
       {children}
     </main>
