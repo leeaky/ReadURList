@@ -31,13 +31,18 @@ Set `DATABASE_URL` to the Supabase **session pooler** (port 5432) using the SQLA
 DATABASE_URL=postgresql+psycopg://postgres.PROJECT:PASSWORD@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres?sslmode=require
 ```
 
-Apply [`supabase/migrations/20260820000000_init_corpus.sql`](supabase/migrations/20260820000000_init_corpus.sql) in the Supabase SQL editor (or `supabase db push` if you use the CLI).
+Apply migrations in the Supabase SQL editor (or `supabase db push` if you use the CLI):
+
+- [`supabase/migrations/20260820000000_init_corpus.sql`](supabase/migrations/20260820000000_init_corpus.sql)
+- [`supabase/migrations/20260826000000_ingest_status.sql`](supabase/migrations/20260826000000_ingest_status.sql) — adds `ingest_status` (`ready` / `pending_body`) for fetch-failure stubs
 
 ```bash
 second-read
 ```
 
-Telegram: `/start`, then paste one or more URLs. Snapshot comes back per URL. `/digest` runs ranking now (sends the Telegram digest at most once per day). Daily digest is scheduled at `DIGEST_HOUR` (default 08:00, NUC local time).
+Set `SITE_URL` to your public Vercel origin (no trailing slash). Telegram uses it for links to the Unfetched page when a URL could not be retrieved.
+
+Telegram: `/start`, then paste one or more URLs. Snapshot comes back per URL. If fetch or extract fails, the item is saved as a stub (`ingest_status=pending_body`) with the title when available; the bot replies with a link to fill in the body on the website. `/digest` runs ranking now (sends the Telegram digest at most once per day). Daily digest is scheduled at `DIGEST_HOUR` (default 08:00, NUC local time). Before ranking, the daily job runs Groq ingest on any stubs that already have pasted text, then ranks only `ready` items.
 
 If Telegram is silent: is the NUC up, and is `second-read` running?
 
@@ -85,7 +90,9 @@ npm install
 npm run dev
 ```
 
-Views: Today (ranked picks + reading path), Unread (optional stale 14+ days), Topics, Clusters, All. Mark read/unread on every card.
+Views: Today (ranked picks + reading path), Unread (optional stale 14+ days), **Unfetched** (stubs awaiting article text), Topics, Clusters, All. Mark read/unread on every card.
+
+**Unfetched:** lists items the worker could not retrieve. Open **Paste article**, paste text or upload a PDF (max 3.5 MB — Vercel serverless limit). Saved text is ingested on the NUC at the next daily digest (or when you run `/digest` / `second-read-digest`). Stubs are hidden from Today, Unread, Topics, Clusters, and All until ingest completes.
 
 ## Backup
 
