@@ -24,6 +24,8 @@ class Settings(BaseSettings):
 
     digest_hour: int = 8
 
+    site_url: str = ""
+
     def ensure_data_dir(self) -> None:
         if self.database_url.startswith("sqlite:///"):
             path = self.database_url.removeprefix("sqlite:///")
