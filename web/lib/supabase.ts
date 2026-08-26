@@ -22,6 +22,9 @@ export type ItemRow = {
   created_at: string;
   read_at: string | null;
   similar_to_item_id: number | null;
+  ingest_status?: string;
+  extracted_text?: string | null;
+  note?: string | null;
 };
 
 export type DailyPickRow = {

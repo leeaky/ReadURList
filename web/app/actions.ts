@@ -18,3 +18,33 @@ export async function setReadState(itemId: number, read: boolean) {
   revalidatePath("/clusters");
   revalidatePath("/all");
 }
+
+export async function submitArticleBody(itemId: number, formData: FormData) {
+  const db = supabaseAdmin();
+  const body = String(formData.get("body") || "").trim();
+  if (!body) {
+    throw new Error("Paste article text.");
+  }
+
+  const { data: row, error: readError } = await db
+    .from("items")
+    .select("id, ingest_status")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (readError) {
+    throw new Error(readError.message);
+  }
+  if (!row || row.ingest_status !== "pending_body") {
+    throw new Error("Item is not awaiting a body.");
+  }
+
+  const { error } = await db
+    .from("items")
+    .update({ extracted_text: body })
+    .eq("id", itemId)
+    .eq("ingest_status", "pending_body");
+  if (error) {
+    throw new Error(error.message);
+  }
+  revalidatePath("/unfetched");
+}

@@ -60,6 +60,7 @@ export function Nav({ current }: { current: string }) {
     ["/topics", "Topics"],
     ["/clusters", "Clusters"],
     ["/all", "All"],
+    ["/unfetched", "Unfetched"],
   ] as const;
   return (
     <nav className="tabs" aria-label="Views">
