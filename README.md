@@ -99,7 +99,7 @@ A local SQLite file is not a backup once capture writes to the cloud.
 
 ## Models
 
-Change Groq model: set `MODEL_INGEST` in `.env` and restart. No code change. Ranking reasons are templates, not an extra LLM call.
+Change Groq model: set `MODEL_INGEST` in `.env` and restart. Default is `openai/gpt-oss-120b` (Groq retired `llama-3.3-70b-versatile` for free/developer on 16 Aug 2026). Ranking reasons are templates, not an extra LLM call.
 
 ## Tests
 

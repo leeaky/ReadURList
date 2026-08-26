@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     groq_api_key: str
 
-    model_ingest: str = "llama-3.3-70b-versatile"
+    model_ingest: str = "openai/gpt-oss-120b"
 
     database_url: str = "sqlite:///./data/second_read.db"
 

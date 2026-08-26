@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Brand } from "@/components/ui";
 import { login } from "./actions";
 
 export default async function LoginPage({
@@ -9,12 +10,7 @@ export default async function LoginPage({
   const params = await searchParams;
   return (
     <main className="page">
-      <header className="brand">
-        <div>
-          <h1>ReadURList</h1>
-          <p className="tagline">Personal corpus — sign in.</p>
-        </div>
-      </header>
+      <Brand tagline="Personal corpus — sign in." />
       <form className="login-form" action={login}>
         <input type="hidden" name="next" value={params.next || "/"} />
         <label>
