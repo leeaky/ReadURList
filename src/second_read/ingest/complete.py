@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from telegram import Bot
@@ -63,12 +64,15 @@ async def complete_pending_bodies(
     llm: LLMProvider,
     settings: Settings,
 ) -> int:
-    done = complete_pending_bodies_sync(llm, settings)
+    done = await asyncio.to_thread(complete_pending_bodies_sync, llm, settings)
     for item in done:
         title = item.title or item.url
-        await bot.send_message(
-            chat_id=settings.telegram_user_id,
-            text=f"Filled in {title} from your paste/PDF.",
-            disable_web_page_preview=True,
-        )
+        try:
+            await bot.send_message(
+                chat_id=settings.telegram_user_id,
+                text=f"Filled in {title} from your paste/PDF.",
+                disable_web_page_preview=True,
+            )
+        except Exception:
+            logger.exception("Failed to send completion ack for item %s", item.id)
     return len(done)
