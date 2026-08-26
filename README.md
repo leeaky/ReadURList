@@ -52,6 +52,19 @@ launchctl load ~/Library/LaunchAgents/com.readurlist.worker.plist
 
 Linux: a systemd user unit with `ExecStart=…/.venv/bin/second-read` and `Restart=always`.
 
+### Start on boot (Windows)
+
+After `second-read` works in a console, use Task Scheduler with **Run only when user is logged on** (no account password) and hide the window:
+
+1. Action → Start a program  
+   - Program: `wscript.exe`  
+   - Arguments: `"C:\Users\YOU\dev\ReadURList\docs\run-worker-hidden.vbs"`  
+   - Start in: `C:\Users\YOU\dev\ReadURList`
+2. Trigger: **At log on** (pair with Windows auto-login if the NUC reboots unattended).
+3. Settings: restart on failure every 1 minute, up to 3 times.
+
+See [`docs/run-worker-hidden.vbs`](docs/run-worker-hidden.vbs).
+
 ### Manual digest / ranking
 
 ```bash
