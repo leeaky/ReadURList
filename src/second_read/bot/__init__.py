@@ -26,7 +26,8 @@ logger = logging.getLogger(__name__)
 
 async def _scheduled_digest(context) -> None:
     settings: Settings = context.application.bot_data["settings"]
-    await run_digest_job(context.bot, settings, force=False)
+    llm: LLMProvider = context.application.bot_data["llm"]
+    await run_digest_job(context.bot, settings, llm, force=False)
 
 
 def build_app(settings: Settings, llm: LLMProvider) -> Application:
