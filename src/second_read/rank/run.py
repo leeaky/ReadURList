@@ -14,6 +14,8 @@ from second_read.db import (
     Item,
     get_session,
 )
+from second_read.ingest.complete import complete_pending_bodies
+from second_read.llm.base import LLMProvider
 from second_read.rank.digest import should_send_digest
 from second_read.rank.score import RankItem, cluster_items, jaccard, score_unread
 
@@ -150,11 +152,20 @@ def format_digest(picks: list[DailyPick]) -> tuple[str, InlineKeyboardMarkup | N
         session.close()
 
 
-async def run_digest_job(bot: Bot, settings: Settings, *, force: bool = False) -> bool:
+async def run_digest_job(
+    bot: Bot,
+    settings: Settings,
+    llm: LLMProvider | None = None,
+    *,
+    force: bool = False,
+) -> bool:
     """Rank, persist, send Telegram digest at most once per day.
 
     Returns True if a digest message was sent.
     """
+    if llm is not None:
+        await complete_pending_bodies(bot, llm, settings)
+
     today = date.today()
     picks = persist_ranking()
     if not picks:
@@ -188,9 +199,11 @@ def main() -> None:
 
     from second_read.config import get_settings
     from second_read.db import init_db
+    from second_read.llm import GroqProvider
 
     settings = get_settings()
     init_db(settings.database_url)
     bot = Bot(settings.telegram_bot_token)
-    sent = asyncio.run(run_digest_job(bot, settings, force=False))
+    llm = GroqProvider(api_key=settings.groq_api_key)
+    sent = asyncio.run(run_digest_job(bot, settings, llm, force=False))
     print("digest sent" if sent else "ranked; digest already sent today")

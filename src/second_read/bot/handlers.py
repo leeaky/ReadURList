@@ -86,11 +86,12 @@ async def handle_start(update, context) -> None:
 
 async def handle_digest(update, context) -> None:
     settings = context.application.bot_data["settings"]
+    llm = context.application.bot_data["llm"]
     if not update.effective_user or update.effective_user.id != settings.telegram_user_id:
         return
     await update.message.reply_text("Running ranking…")
     try:
-        sent = await run_digest_job(context.bot, settings, force=True)
+        sent = await run_digest_job(context.bot, settings, llm, force=True)
     except Exception as exc:
         logger.exception("Manual digest failed")
         await update.message.reply_text(f"Digest failed: {exc}")
