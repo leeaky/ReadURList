@@ -8,8 +8,9 @@ export default async function TopicsPage() {
   const { data, error } = await db
     .from("items")
     .select(
-      "id, url, title, snapshot, subject, topics, keywords, created_at, read_at, similar_to_item_id",
+      "id, url, title, snapshot, subject, topics, keywords, created_at, read_at, similar_to_item_id, ingest_status",
     )
+    .eq("ingest_status", "ready")
     .order("created_at", { ascending: false });
   if (error) {
     throw new Error(error.message);

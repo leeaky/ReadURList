@@ -2,9 +2,50 @@ from __future__ import annotations
 
 from second_read.config import Settings
 from second_read.db import Item, get_session
-from second_read.ingest.extract import extract_article
+from second_read.ingest.extract import ExtractError, FetchError, extract_article
 from second_read.ingest.summarize import summarize_article
 from second_read.llm.base import LLMProvider
+
+INGEST_READY = "ready"
+INGEST_PENDING_BODY = "pending_body"
+NOT_AVAILABLE = "not available"
+
+
+def _save_stub(
+    *,
+    url: str,
+    title: str,
+    note: str,
+    note_clean: str | None,
+) -> tuple[Item, bool]:
+    session = get_session()
+    try:
+        existing = session.query(Item).filter_by(url=url).one_or_none()
+        if existing:
+            session.expunge(existing)
+            return existing, False
+        item = Item(
+            url=url,
+            title=title or url,
+            snapshot=NOT_AVAILABLE,
+            subject=NOT_AVAILABLE,
+            topics=[],
+            keywords=[],
+            extracted_text="",
+            priority=3,
+            note=note_clean or note,
+            ingest_status=INGEST_PENDING_BODY,
+        )
+        session.add(item)
+        session.commit()
+        session.refresh(item)
+        session.expunge(item)
+        return item, True
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 def ingest_url(
@@ -32,7 +73,13 @@ def ingest_url(
     finally:
         session.close()
 
-    title_hint, text = extract_article(url)
+    try:
+        title_hint, text = extract_article(url)
+    except FetchError as exc:
+        return _save_stub(url=url, title=url, note=str(exc), note_clean=note_clean)
+    except ExtractError as exc:
+        return _save_stub(url=url, title=exc.title, note=str(exc), note_clean=note_clean)
+
     result = summarize_article(
         llm,
         model=settings.model_ingest,
@@ -62,6 +109,7 @@ def ingest_url(
             extracted_text=text,
             priority=result.priority,
             note=note_clean,
+            ingest_status=INGEST_READY,
         )
         session.add(item)
         session.commit()

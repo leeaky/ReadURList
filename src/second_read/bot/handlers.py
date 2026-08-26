@@ -4,11 +4,27 @@ import asyncio
 import logging
 
 from second_read.db import mark_item_read
-from second_read.ingest import ingest_url
-from second_read.ingest.extract import FetchError, find_urls
+from second_read.ingest import INGEST_PENDING_BODY, ingest_url
+from second_read.ingest.extract import find_urls
 from second_read.rank.run import run_digest_job
 
 logger = logging.getLogger(__name__)
+
+
+def format_stub_ack(site_url: str, *, prefix: str = "") -> str:
+    base = (site_url or "").rstrip("/")
+    if base:
+        link = f"{base}/unfetched"
+        body = (
+            "Saved, but the article could not be retrieved. "
+            f"Paste the text or a PDF on the Unfetched page: {link}"
+        )
+    else:
+        body = (
+            "Saved, but the article could not be retrieved. "
+            "Paste the text or a PDF on the website Unfetched page."
+        )
+    return f"{prefix}{body}"
 
 
 async def handle_message(update, context) -> None:
@@ -32,13 +48,15 @@ async def handle_message(update, context) -> None:
             await update.message.reply_text(f"{prefix}Saving…")
             try:
                 item, created = await asyncio.to_thread(ingest_url, url, llm, settings)
-            except FetchError as exc:
-                logger.warning("Fetch failed for %s: %s", url, exc)
-                await update.message.reply_text(f"{prefix}{exc}")
-                continue
             except Exception as exc:
                 logger.exception("Ingest failed for %s", url)
                 await update.message.reply_text(f"{prefix}Couldn't save that URL: {exc}")
+                continue
+
+            if item.ingest_status == INGEST_PENDING_BODY:
+                await update.message.reply_text(
+                    format_stub_ack(settings.site_url, prefix=prefix)
+                )
                 continue
 
             title = _escape_md(item.title or url)
@@ -68,11 +86,12 @@ async def handle_start(update, context) -> None:
 
 async def handle_digest(update, context) -> None:
     settings = context.application.bot_data["settings"]
+    llm = context.application.bot_data["llm"]
     if not update.effective_user or update.effective_user.id != settings.telegram_user_id:
         return
     await update.message.reply_text("Running ranking…")
     try:
-        sent = await run_digest_job(context.bot, settings, force=True)
+        sent = await run_digest_job(context.bot, settings, llm, force=True)
     except Exception as exc:
         logger.exception("Manual digest failed")
         await update.message.reply_text(f"Digest failed: {exc}")

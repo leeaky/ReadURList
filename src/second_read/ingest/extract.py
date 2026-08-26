@@ -38,6 +38,14 @@ class FetchError(Exception):
         self.status_code = status_code
 
 
+class ExtractError(Exception):
+    """HTML fetched but main article text could not be extracted."""
+
+    def __init__(self, message: str, *, title: str) -> None:
+        super().__init__(message)
+        self.title = title
+
+
 def find_urls(text: str) -> list[str]:
     return URL_RE.findall(text or "")
 
@@ -139,6 +147,9 @@ def extract_article(url: str, timeout: float = 30.0) -> tuple[str, str]:
     title = (meta.title if meta and meta.title else "") or url
 
     if not extracted or len(extracted.strip()) < 80:
-        raise ValueError("Could not extract enough article text from URL")
+        raise ExtractError(
+            "Could not extract enough article text from URL",
+            title=title.strip() or url,
+        )
 
     return title.strip(), extracted.strip()
