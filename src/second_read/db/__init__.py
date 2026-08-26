@@ -164,7 +164,7 @@ def _migrate_sqlite(engine) -> None:
             "note": "ALTER TABLE items ADD COLUMN note TEXT",
             "similar_to_item_id": "ALTER TABLE items ADD COLUMN similar_to_item_id INTEGER",
             "read_at": "ALTER TABLE items ADD COLUMN read_at DATETIME",
-            "ingest_status": "ALTER TABLE items ADD COLUMN ingest_status VARCHAR(32) DEFAULT 'ready'",
+            "ingest_status": "ALTER TABLE items ADD COLUMN ingest_status VARCHAR(32) NOT NULL DEFAULT 'ready'",
         }
         for name, sql in alters.items():
             if name not in columns:
