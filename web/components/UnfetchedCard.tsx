@@ -1,13 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { submitArticleBody } from "@/app/actions";
+import { useActionState, useState } from "react";
+import {
+  submitArticleBody,
+  type SubmitArticleBodyState,
+} from "@/app/actions";
 import type { ItemRow } from "@/lib/supabase";
 
 export function UnfetchedCard({ item }: { item: ItemRow }) {
   const [open, setOpen] = useState(false);
   const hasBody = Boolean((item.extracted_text || "").trim());
   const action = submitArticleBody.bind(null, item.id);
+  const initialState: SubmitArticleBodyState = { ok: true };
+  const [state, formAction, pending] = useActionState(action, initialState);
 
   return (
     <article className="item">
@@ -22,10 +27,17 @@ export function UnfetchedCard({ item }: { item: ItemRow }) {
         Paste article
       </button>
       {open ? (
-        <form action={action} className="paste-form">
+        <form action={formAction} className="paste-form">
           <textarea name="body" rows={8} placeholder="Paste article text…" />
           <input type="file" name="pdf" accept="application/pdf" />
-          <button type="submit">Save for fill-in</button>
+          <button type="submit" disabled={pending}>
+            {pending ? "Saving…" : "Save for fill-in"}
+          </button>
+          {!state.ok ? (
+            <p className="error" role="alert" aria-live="polite">
+              {state.error}
+            </p>
+          ) : null}
         </form>
       ) : null}
     </article>

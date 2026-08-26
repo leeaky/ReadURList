@@ -164,7 +164,10 @@ async def run_digest_job(
     Returns True if a digest message was sent.
     """
     if llm is not None:
-        await complete_pending_bodies(bot, llm, settings)
+        try:
+            await complete_pending_bodies(bot, llm, settings)
+        except Exception:
+            logger.exception("Pending-body completion failed; continuing with digest")
 
     today = date.today()
     picks = persist_ranking()
