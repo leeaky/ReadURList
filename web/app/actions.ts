@@ -21,9 +21,14 @@ export async function setReadState(itemId: number, read: boolean) {
 
 export async function submitArticleBody(itemId: number, formData: FormData) {
   const db = supabaseAdmin();
-  const body = String(formData.get("body") || "").trim();
+  let body = String(formData.get("body") || "").trim();
+  const pdf = formData.get("pdf");
+  if (!body && pdf instanceof File && pdf.size > 0) {
+    const { extractPdfText } = await import("@/lib/pdf");
+    body = (await extractPdfText(pdf)).trim();
+  }
   if (!body) {
-    throw new Error("Paste article text.");
+    throw new Error("Paste article text or upload a PDF with extractable text.");
   }
 
   const { data: row, error: readError } = await db

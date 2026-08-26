@@ -24,6 +24,7 @@ export function UnfetchedCard({ item }: { item: ItemRow }) {
       {open ? (
         <form action={action} className="paste-form">
           <textarea name="body" rows={8} placeholder="Paste article text…" />
+          <input type="file" name="pdf" accept="application/pdf" />
           <button type="submit">Save for fill-in</button>
         </form>
       ) : null}
