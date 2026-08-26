@@ -19,7 +19,7 @@ export async function setReadState(itemId: number, read: boolean) {
   revalidatePath("/all");
 }
 
-const MAX_PDF_BYTES = 10 * 1024 * 1024;
+const MAX_PDF_BYTES = 3.5 * 1024 * 1024;
 
 export async function submitArticleBody(itemId: number, formData: FormData) {
   const db = supabaseAdmin();
@@ -27,7 +27,7 @@ export async function submitArticleBody(itemId: number, formData: FormData) {
   const pdf = formData.get("pdf");
   if (!body && pdf instanceof File && pdf.size > 0) {
     if (pdf.size > MAX_PDF_BYTES) {
-      throw new Error("PDF must be 10 MB or smaller.");
+      throw new Error("PDF must be under 3.5 MB.");
     }
     const { extractPdfText } = await import("@/lib/pdf");
     body = (await extractPdfText(pdf)).trim();
