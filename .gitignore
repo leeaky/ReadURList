@@ -19,3 +19,5 @@ web/.env
 web/.env.local
 supabase/.temp/
 
+
+.worktrees/
