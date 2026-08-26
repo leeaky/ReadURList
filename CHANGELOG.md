@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Groq chat retries on 429/5xx during bulk ingest.
 
 ### Added
+- Fetch/extract failures save `pending_body` stubs; Unfetched page for paste/PDF; daily NUC Groq fill-in before digest.
 - Multi-URL paste in Telegram (sequential `n/N` snapshots).
 - Daily cluster + ranking job, `daily_picks`, Telegram digest with Mark read buttons (`/digest` to run now).
 - Next.js website (`web/`) on Vercel: Today, Unread, Topics, Clusters, All, reading path, password gate, mark read.
