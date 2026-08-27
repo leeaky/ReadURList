@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Ingest reuses existing ready subjects/topics; the daily job consolidates near-duplicate tags when unique subjects are more than half of ready items.
+- Ranking clusters on subject + topics; keywords are only for near-duplicate detection.
+- Today explains ranking and shows pick rank; Topics, Clusters, and Unread say how they relate.
 - Edit can send a completed item back to Unfetched (clears the body, queues Groq fill-in).
 - Product center from claim-connection pings to **capture → snapshot → daily ranked reads**.
 - Ingest output is a 2–4 sentence snapshot plus subject, topics, keywords, and priority.

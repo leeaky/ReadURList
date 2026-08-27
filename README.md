@@ -103,7 +103,7 @@ npm install
 npm run dev
 ```
 
-Views: Today (ranked picks + reading path), Unread (optional stale 14+ days), **Unfetched** (stubs awaiting article text), Topics, Clusters, All. Mark read/unread on every card.
+Views: Today (ranked picks, ranking explainer, pick ranks 1–5, reading path), Unread (optional stale 14+ days), **Unfetched** (stubs awaiting article text), Topics, Clusters, All. Mark read/unread on every card.
 
 **Unfetched:** lists items the worker could not retrieve. Open **Paste article**, paste text or upload a PDF (max 3.5 MB — Vercel serverless limit). Saved text is ingested on the NUC at the next daily digest (or when you run `/digest` / `second-read-digest`). Stubs are hidden from Today, Unread, Topics, Clusters, and All until ingest completes.
 
@@ -119,7 +119,7 @@ A local SQLite file is not a backup once capture writes to the cloud.
 
 ## Models
 
-Change Groq model: set `MODEL_INGEST` in `.env` and restart. Default is `openai/gpt-oss-120b` (Groq retired `llama-3.3-70b-versatile` for free/developer on 16 Aug 2026). Ranking reasons are templates, not an extra LLM call.
+Change Groq model: set `MODEL_INGEST` in `.env` and restart. Default is `openai/gpt-oss-120b` (Groq retired `llama-3.3-70b-versatile` for free/developer on 16 Aug 2026). Ranking reasons stay templates, not an extra LLM call; ingest is given the current subject/topic lists.
 
 ## Tests
 
