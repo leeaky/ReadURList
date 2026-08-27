@@ -1,9 +1,12 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
+  sendItemToUnfetched,
   setReadState,
   updateItemMetadata,
+  type SendToUnfetchedState,
   type UpdateItemMetadataState,
 } from "@/app/actions";
 import type { ItemRow } from "@/lib/supabase";
@@ -22,79 +25,131 @@ export function ItemCard({
   item: ItemRow;
   reason?: string;
 }) {
+  const router = useRouter();
   const read = Boolean(item.read_at);
   const toggle = setReadState.bind(null, item.id, !read);
   const topics = item.topics ?? [];
   const [editing, setEditing] = useState(false);
+  const [confirmingSend, setConfirmingSend] = useState(false);
   const action = updateItemMetadata.bind(null, item.id);
   const initialState: UpdateItemMetadataState = { ok: true, saved: false };
   const [state, formAction, pending] = useActionState(action, initialState);
+  const sendAction = sendItemToUnfetched.bind(null, item.id);
+  const sendInitial: SendToUnfetchedState = { ok: true, sent: false };
+  const [sendState, sendFormAction, sendPending] = useActionState(
+    sendAction,
+    sendInitial,
+  );
 
   useEffect(() => {
     if (state.ok && state.saved) {
       setEditing(false);
+      setConfirmingSend(false);
     }
   }, [state]);
+
+  useEffect(() => {
+    if (sendState.ok && sendState.sent) {
+      router.push("/unfetched");
+    }
+  }, [sendState, router]);
 
   return (
     <article className="item">
       {editing ? (
-        <form action={formAction} className="paste-form">
-          <label>
-            Headline
-            <input
-              type="text"
-              name="title"
-              defaultValue={item.title}
-              maxLength={1024}
-              required
-            />
-          </label>
-          <label>
-            Description
-            <textarea
-              name="snapshot"
-              rows={4}
-              defaultValue={item.snapshot}
-            />
-          </label>
-          <label>
-            Subject
-            <input
-              type="text"
-              name="subject"
-              defaultValue={item.subject}
-              maxLength={256}
-            />
-          </label>
-          <label>
-            Topics
-            <input
-              type="text"
-              name="topics"
-              defaultValue={topics.join(", ")}
-              placeholder="Comma-separated"
-            />
-          </label>
-          <div className="item-actions">
-            <button type="submit" disabled={pending}>
-              {pending ? "Saving…" : "Save"}
-            </button>
-            <button
-              type="button"
-              className="ghost"
-              onClick={() => setEditing(false)}
-              disabled={pending}
-            >
-              Cancel
-            </button>
-            {!state.ok ? (
-              <p className="error" role="alert" aria-live="polite">
-                {state.error}
+        <>
+          <form action={formAction} className="paste-form">
+            <label>
+              Headline
+              <input
+                type="text"
+                name="title"
+                defaultValue={item.title}
+                maxLength={1024}
+                required
+              />
+            </label>
+            <label>
+              Description
+              <textarea
+                name="snapshot"
+                rows={4}
+                defaultValue={item.snapshot}
+              />
+            </label>
+            <label>
+              Subject
+              <input
+                type="text"
+                name="subject"
+                defaultValue={item.subject}
+                maxLength={256}
+              />
+            </label>
+            <label>
+              Topics
+              <input
+                type="text"
+                name="topics"
+                defaultValue={topics.join(", ")}
+                placeholder="Comma-separated"
+              />
+            </label>
+            {confirmingSend ? null : (
+              <div className="item-actions">
+                <button type="submit" disabled={pending}>
+                  {pending ? "Saving…" : "Save"}
+                </button>
+                <button
+                  type="button"
+                  className="ghost"
+                  onClick={() => setEditing(false)}
+                  disabled={pending}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="ghost"
+                  onClick={() => setConfirmingSend(true)}
+                  disabled={pending}
+                >
+                  Send to Unfetched
+                </button>
+                {!state.ok ? (
+                  <p className="error" role="alert" aria-live="polite">
+                    {state.error}
+                  </p>
+                ) : null}
+              </div>
+            )}
+          </form>
+          {confirmingSend ? (
+            <div className="item-actions">
+              <p className="item-reason confirm-prompt">
+                Send to Unfetched? This clears the stored article text.
               </p>
-            ) : null}
-          </div>
-        </form>
+              <form action={sendFormAction}>
+                <button type="submit" disabled={sendPending}>
+                  {sendPending ? "Sending…" : "Send to Unfetched"}
+                </button>
+              </form>
+              <button
+                type="button"
+                className="ghost"
+                onClick={() => setConfirmingSend(false)}
+                disabled={sendPending}
+              >
+                Cancel
+              </button>
+              {!sendState.ok ? (
+                <p className="error" role="alert" aria-live="polite">
+                  {sendState.error}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </>
       ) : (
         <>
           <a
