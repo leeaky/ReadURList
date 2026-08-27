@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase";
-import { itemEditGuard, parseItemEdit } from "@/lib/item-edit";
+import {
+  itemEditGuard,
+  parseItemEdit,
+  sendToUnfetchedFields,
+  sendToUnfetchedGuard,
+} from "@/lib/item-edit";
 import { unfetchedDeleteGuard } from "@/lib/unfetched";
 
 export async function setReadState(itemId: number, read: boolean) {
@@ -79,6 +84,55 @@ export async function updateItemMetadata(
   revalidatePath("/clusters");
   revalidatePath("/all");
   return { ok: true, saved: true };
+}
+
+export type SendToUnfetchedState =
+  | { ok: true; sent: boolean }
+  | { ok: false; error: string };
+
+export async function sendItemToUnfetched(
+  itemId: number,
+  _previousState: SendToUnfetchedState,
+  _formData: FormData,
+): Promise<SendToUnfetchedState> {
+  if (!Number.isInteger(itemId) || itemId <= 0) {
+    return { ok: false, error: "Invalid article." };
+  }
+
+  const db = supabaseAdmin();
+  const { data: row, error: readError } = await db
+    .from("items")
+    .select("id, ingest_status")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (readError) {
+    return { ok: false, error: "Could not send to Unfetched." };
+  }
+  const blocked = sendToUnfetchedGuard(
+    row ? { ingest_status: String(row.ingest_status) } : null,
+  );
+  if (blocked) {
+    return { ok: false, error: blocked };
+  }
+
+  const { error } = await db
+    .from("items")
+    .update(sendToUnfetchedFields())
+    .eq("id", itemId)
+    .eq("ingest_status", "ready");
+  if (error) {
+    return { ok: false, error: "Could not send to Unfetched." };
+  }
+
+  await db.from("daily_picks").delete().eq("item_id", itemId);
+
+  revalidatePath("/");
+  revalidatePath("/unread");
+  revalidatePath("/topics");
+  revalidatePath("/clusters");
+  revalidatePath("/all");
+  revalidatePath("/unfetched");
+  return { ok: true, sent: true };
 }
 
 const MAX_PDF_BYTES = 3.5 * 1024 * 1024;
