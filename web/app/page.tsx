@@ -1,4 +1,5 @@
 import { ItemCard, Shell } from "@/components/ui";
+import { isReadyItem } from "@/lib/item-edit";
 import { supabaseAdmin, type DailyPickRow, type ItemRow } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +31,10 @@ export default async function TodayPage() {
     picks = ((data || []) as DailyPickRow[])
       .map((row) => {
         const item = asItem(row.items);
-        return item ? { item, reason: row.reason, rank: row.rank } : null;
+        if (!item || !isReadyItem(item)) {
+          return null;
+        }
+        return { item, reason: row.reason, rank: row.rank };
       })
       .filter((row): row is { item: ItemRow; reason: string; rank: number } => row !== null);
   }
@@ -38,8 +42,9 @@ export default async function TodayPage() {
   const path = await db
     .from("items")
     .select(
-      "id, url, title, snapshot, subject, topics, keywords, created_at, read_at, similar_to_item_id",
+      "id, url, title, snapshot, subject, topics, keywords, created_at, read_at, similar_to_item_id, ingest_status",
     )
+    .eq("ingest_status", "ready")
     .not("read_at", "is", null)
     .order("read_at", { ascending: false })
     .limit(10);

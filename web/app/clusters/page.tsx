@@ -1,4 +1,5 @@
 import { ItemCard, Shell } from "@/components/ui";
+import { isReadyItem } from "@/lib/item-edit";
 import { supabaseAdmin, type ClusterRow, type ItemRow } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +34,7 @@ export default async function ClustersPage() {
         const value = row.items;
         return Array.isArray(value) ? value[0] : value;
       })
-      .filter((item): item is ItemRow => Boolean(item));
+      .filter((item): item is ItemRow => Boolean(item) && isReadyItem(item));
     blocks.push({ cluster, items });
   }
 
