@@ -23,9 +23,11 @@ export function UnfetchedCard({ item }: { item: ItemRow }) {
       <p className="item-reason">
         {hasBody ? "Queued for today’s fill-in" : "Needs article text"}
       </p>
-      <button type="button" className="ghost" onClick={() => setOpen((value) => !value)}>
-        Paste article
-      </button>
+      <div className="item-actions">
+        <button type="button" className="ghost" onClick={() => setOpen((value) => !value)}>
+          Paste article
+        </button>
+      </div>
       {open ? (
         <form action={formAction} className="paste-form">
           <textarea name="body" rows={8} placeholder="Paste article text…" />
