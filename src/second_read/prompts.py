@@ -31,3 +31,43 @@ INGEST_SCHEMA = {
         ],
     },
 }
+
+CONSOLIDATE_SYSTEM = """You merge near-duplicate subject and topic labels for a personal reading corpus.
+Return JSON only. Merge labels that mean the same bucket (e.g. Claude Code / Claude Code training / Claude 101 course → Claude Code).
+Do not collapse distinct domains into a tiny generic list (public health stays separate from LLM papers).
+Do not invent new items. Identity mapping is allowed. Do not output keywords, titles, or snapshots."""
+
+CONSOLIDATE_SCHEMA = {
+    "name": "tag_consolidation",
+    "schema": {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "subject_maps": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "from": {"type": "string"},
+                        "to": {"type": "string"},
+                    },
+                    "required": ["from", "to"],
+                },
+            },
+            "topic_maps": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "from": {"type": "string"},
+                        "to": {"type": "string"},
+                    },
+                    "required": ["from", "to"],
+                },
+            },
+        },
+        "required": ["subject_maps", "topic_maps"],
+    },
+}
