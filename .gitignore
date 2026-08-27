@@ -15,6 +15,7 @@ data/
 *.db
 web/node_modules/
 web/.next/
+web/tsconfig.tsbuildinfo
 web/.env
 web/.env.local
 supabase/.temp/
