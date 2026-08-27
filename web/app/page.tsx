@@ -1,5 +1,6 @@
 import { ItemCard, Shell } from "@/components/ui";
 import { isReadyItem } from "@/lib/item-edit";
+import { RANKING_TODAY_BLURB } from "@/lib/ranking-copy";
 import { supabaseAdmin, type DailyPickRow, type ItemRow } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -52,10 +53,13 @@ export default async function TodayPage() {
   return (
     <Shell current="/">
       <h2 className="section-title">Today</h2>
+      <p className="empty">{RANKING_TODAY_BLURB}</p>
       {picks.length === 0 ? (
         <p className="empty">No ranked picks yet. Run the daily job on the NUC (`second-read-digest` or /digest).</p>
       ) : (
-        picks.map((p) => <ItemCard key={p.item.id} item={p.item} reason={p.reason} />)
+        picks.map((p) => (
+          <ItemCard key={p.item.id} item={p.item} reason={p.reason} rank={p.rank} />
+        ))
       )}
       <h2 className="section-title">Path</h2>
       {(path.data || []).length === 0 ? (

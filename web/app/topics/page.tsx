@@ -1,4 +1,5 @@
 import { ItemCard, Shell } from "@/components/ui";
+import { TOPICS_BLURB } from "@/lib/ranking-copy";
 import { supabaseAdmin, type ItemRow } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,7 @@ export default async function TopicsPage() {
   const subjects = [...groups.keys()].sort((a, b) => a.localeCompare(b));
   return (
     <Shell current="/topics">
+      <p className="empty">{TOPICS_BLURB}</p>
       {subjects.length === 0 ? (
         <p className="empty">Nothing saved yet.</p>
       ) : (

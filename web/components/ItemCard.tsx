@@ -20,9 +20,11 @@ function formatWhen(iso: string | null) {
 export function ItemCard({
   item,
   reason,
+  rank,
 }: {
   item: ItemRow;
   reason?: string;
+  rank?: number;
 }) {
   const read = Boolean(item.read_at);
   const toggle = setReadState.bind(null, item.id, !read);
@@ -150,6 +152,7 @@ export function ItemCard({
             target="_blank"
             rel="noopener noreferrer"
           >
+            {rank != null ? `${rank}. ` : ""}
             {item.title || item.url}
           </a>
           {item.snapshot ? <p className="item-summary">{item.snapshot}</p> : null}
