@@ -233,6 +233,15 @@ button.ghost {
   margin: 0.55rem 0 0;
 }
 
+.confirm-prompt {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+.item-actions .error {
+  flex: 1 1 100%;
+}
+
 input[type="password"],
 input[type="text"] {
   width: 100%;
