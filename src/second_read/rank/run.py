@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import date, datetime
 
@@ -18,6 +19,7 @@ from second_read.ingest.complete import complete_pending_bodies
 from second_read.llm.base import LLMProvider
 from second_read.rank.digest import should_send_digest
 from second_read.rank.score import RankItem, cluster_items, jaccard, score_unread
+from second_read.tags.consolidate import maybe_consolidate_tags
 
 logger = logging.getLogger(__name__)
 
@@ -168,6 +170,12 @@ async def run_digest_job(
             await complete_pending_bodies(bot, llm, settings)
         except Exception:
             logger.exception("Pending-body completion failed; continuing with digest")
+
+    if llm is not None:
+        try:
+            await asyncio.to_thread(maybe_consolidate_tags, llm, settings)
+        except Exception:
+            logger.exception("Tag consolidation failed; continuing with digest")
 
     today = date.today()
     picks = persist_ranking()

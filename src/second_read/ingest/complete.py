@@ -10,6 +10,7 @@ from second_read.db import Item, get_session
 from second_read.ingest import INGEST_PENDING_BODY, INGEST_READY
 from second_read.ingest.summarize import summarize_article
 from second_read.llm.base import LLMProvider
+from second_read.tags.vocab import load_vocabulary
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +29,15 @@ def complete_pending_bodies_sync(llm: LLMProvider, settings: Settings) -> list[I
             if not body:
                 continue
             try:
+                vocab = load_vocabulary()
                 result = summarize_article(
                     llm,
                     model=settings.model_ingest,
                     url=row.url,
                     title_hint=row.title or row.url,
                     text=body,
+                    existing_subjects=vocab.subjects,
+                    existing_topics=vocab.topics,
                 )
             except Exception as exc:
                 logger.exception("Complete pending failed for item %s", row.id)

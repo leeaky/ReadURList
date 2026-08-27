@@ -159,3 +159,86 @@ def test_digest_ranks_when_pending_completion_fails(monkeypatch):
 
     assert sent is False
     assert ranked == [True]
+
+
+def test_complete_pending_canonicalizes_against_existing_subject(tmp_path):
+    db = f"sqlite:///{tmp_path / 't.db'}"
+    init_db(db)
+    session = get_session()
+    try:
+        session.add(
+            Item(
+                url="https://example.com/ready",
+                title="Ready",
+                snapshot="s",
+                subject="Claude Code",
+                topics=["agents"],
+                keywords=["k"],
+                extracted_text="x" * 40,
+                priority=3,
+                ingest_status="ready",
+            )
+        )
+        session.add(
+            Item(
+                url="https://example.com/later",
+                title="later",
+                snapshot="not available",
+                subject="not available",
+                topics=[],
+                keywords=[],
+                extracted_text="Article body " * 40,
+                priority=3,
+                ingest_status="pending_body",
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    class CaseLLM:
+        def complete(self, prompt, *, model, system=None, schema=None, temperature=0.3) -> str:
+            assert "Claude Code" in prompt
+            return (
+                '{"title": "Filled", "snapshot": "Now we have a snapshot.",'
+                ' "subject": "claude code", "topics": ["tests"], "keywords": ["pytest"],'
+                ' "priority": 4}'
+            )
+
+    settings = Settings(
+        telegram_bot_token="x",
+        telegram_user_id=1,
+        groq_api_key="x",
+        database_url=db,
+    )
+    done = complete_pending_bodies_sync(CaseLLM(), settings)  # type: ignore[arg-type]
+    assert done[0].subject == "Claude Code"
+
+
+def test_digest_ranks_when_consolidation_fails(monkeypatch):
+    ranked = []
+
+    async def ok_completion(*args):
+        return 0
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("Groq consolidate unavailable")
+
+    def fake_persist_ranking():
+        ranked.append(True)
+        return []
+
+    monkeypatch.setattr(rank_run, "complete_pending_bodies", ok_completion)
+    monkeypatch.setattr(rank_run, "maybe_consolidate_tags", boom)
+    monkeypatch.setattr(rank_run, "persist_ranking", fake_persist_ranking)
+    settings = Settings(
+        telegram_bot_token="x",
+        telegram_user_id=1,
+        groq_api_key="x",
+        database_url="sqlite://",
+    )
+    sent = asyncio.run(
+        rank_run.run_digest_job(object(), settings, FakeLLM())  # type: ignore[arg-type]
+    )
+    assert sent is False
+    assert ranked == [True]
