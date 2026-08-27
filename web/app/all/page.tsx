@@ -30,13 +30,17 @@ export default async function AllPage({
   const items = (data || []) as ItemRow[];
   return (
     <Shell current="/all">
-      <p className="filter-row">
-        <Link href="/all">All</Link>
-        {" · "}
-        <Link href="/all?filter=unread">Unread</Link>
-        {" · "}
-        <Link href="/all?filter=read">Read</Link>
-      </p>
+      <nav className="filter-row" aria-label="Library filters">
+        <Link href="/all" aria-current={!filter ? "page" : undefined}>
+          All
+        </Link>
+        <Link href="/all?filter=unread" aria-current={filter === "unread" ? "page" : undefined}>
+          Unread
+        </Link>
+        <Link href="/all?filter=read" aria-current={filter === "read" ? "page" : undefined}>
+          Read
+        </Link>
+      </nav>
       {items.length === 0 ? (
         <p className="empty">Nothing saved yet.</p>
       ) : (

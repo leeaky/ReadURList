@@ -31,11 +31,14 @@ export default async function UnreadPage({
   const items = (data || []) as ItemRow[];
   return (
     <Shell current="/unread">
-      <p className="filter-row">
-        <Link href="/unread">All unread</Link>
-        {" · "}
-        <Link href="/unread?stale=1">Stale (14+ days)</Link>
-      </p>
+      <nav className="filter-row" aria-label="Unread filters">
+        <Link href="/unread" aria-current={stale === "1" ? undefined : "page"}>
+          All unread
+        </Link>
+        <Link href="/unread?stale=1" aria-current={stale === "1" ? "page" : undefined}>
+          Stale (14+ days)
+        </Link>
+      </nav>
       {items.length === 0 ? (
         <p className="empty">No unread items.</p>
       ) : (
