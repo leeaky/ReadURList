@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ingest output is a 2–4 sentence snapshot plus subject, topics, keywords, and priority.
 - Persistence target is **Supabase Postgres**; worker stays on the always-on NUC.
 - Groq chat retries on 429/5xx during bulk ingest.
+- Unfetched splits needs-text vs saved-for-fill-in; paste form closes on save; stubs can be deleted after confirm.
 
 ### Added
 - Fetch/extract failures save `pending_body` stubs; Unfetched page for paste/PDF; daily NUC Groq fill-in before digest.
