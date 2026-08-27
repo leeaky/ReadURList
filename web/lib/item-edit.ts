@@ -58,3 +58,43 @@ export function parseItemEdit(input: ItemEditInput): ItemEditResult {
     },
   };
 }
+
+export function sendToUnfetchedGuard(
+  row: { ingest_status: string } | null,
+): string | null {
+  if (!row) {
+    return "Item not found.";
+  }
+  if (row.ingest_status !== "ready") {
+    return "Only completed articles can be sent to Unfetched.";
+  }
+  return null;
+}
+
+export function sendToUnfetchedFields(): {
+  ingest_status: "pending_body";
+  extracted_text: "";
+  snapshot: "not available";
+  subject: "not available";
+  topics: string[];
+  keywords: string[];
+  priority: number;
+  note: "Sent back from edit";
+} {
+  return {
+    ingest_status: "pending_body",
+    extracted_text: "",
+    snapshot: "not available",
+    subject: "not available",
+    topics: [],
+    keywords: [],
+    priority: 3,
+    note: "Sent back from edit",
+  };
+}
+
+export function isReadyItem(
+  row: { ingest_status?: string } | null,
+): boolean {
+  return row?.ingest_status === "ready";
+}
