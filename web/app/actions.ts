@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase";
+import { unfetchedDeleteGuard } from "@/lib/unfetched";
 
 export async function setReadState(itemId: number, read: boolean) {
   const db = supabaseAdmin();
@@ -22,7 +23,7 @@ export async function setReadState(itemId: number, read: boolean) {
 const MAX_PDF_BYTES = 3.5 * 1024 * 1024;
 
 export type SubmitArticleBodyState =
-  | { ok: true }
+  | { ok: true; saved: boolean }
   | { ok: false; error: string };
 
 export async function submitArticleBody(
@@ -78,6 +79,47 @@ export async function submitArticleBody(
     .eq("ingest_status", "pending_body");
   if (error) {
     throw new Error(error.message);
+  }
+  revalidatePath("/unfetched");
+  return { ok: true, saved: true };
+}
+
+export type DeleteUnfetchedState =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export async function deleteUnfetchedItem(
+  itemId: number,
+  _previousState: DeleteUnfetchedState,
+  _formData: FormData,
+): Promise<DeleteUnfetchedState> {
+  if (!Number.isInteger(itemId) || itemId <= 0) {
+    return { ok: false, error: "Invalid article." };
+  }
+
+  const db = supabaseAdmin();
+  const { data: row, error: readError } = await db
+    .from("items")
+    .select("id, ingest_status")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (readError) {
+    return { ok: false, error: "Could not delete this stub." };
+  }
+  const blocked = unfetchedDeleteGuard(
+    row ? { ingest_status: String(row.ingest_status) } : null,
+  );
+  if (blocked) {
+    return { ok: false, error: blocked };
+  }
+
+  const { error } = await db
+    .from("items")
+    .delete()
+    .eq("id", itemId)
+    .eq("ingest_status", "pending_body");
+  if (error) {
+    return { ok: false, error: "Could not delete this stub." };
   }
   revalidatePath("/unfetched");
   return { ok: true };
