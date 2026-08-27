@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   sendItemToUnfetched,
   setReadState,
@@ -25,7 +24,6 @@ export function ItemCard({
   item: ItemRow;
   reason?: string;
 }) {
-  const router = useRouter();
   const read = Boolean(item.read_at);
   const toggle = setReadState.bind(null, item.id, !read);
   const topics = item.topics ?? [];
@@ -47,12 +45,6 @@ export function ItemCard({
       setConfirmingSend(false);
     }
   }, [state]);
-
-  useEffect(() => {
-    if (sendState.ok && sendState.sent) {
-      router.push("/unfetched");
-    }
-  }, [sendState, router]);
 
   return (
     <article className="item">

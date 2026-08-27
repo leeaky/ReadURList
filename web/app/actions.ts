@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase";
 import {
   itemEditGuard,
@@ -132,7 +133,7 @@ export async function sendItemToUnfetched(
   revalidatePath("/clusters");
   revalidatePath("/all");
   revalidatePath("/unfetched");
-  return { ok: true, sent: true };
+  redirect("/unfetched");
 }
 
 const MAX_PDF_BYTES = 3.5 * 1024 * 1024;
