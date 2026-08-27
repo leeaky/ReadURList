@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Edit can send a completed item back to Unfetched (clears the body, queues Groq fill-in).
 - Product center from claim-connection pings to **capture → snapshot → daily ranked reads**.
 - Ingest output is a 2–4 sentence snapshot plus subject, topics, keywords, and priority.
 - Persistence target is **Supabase Postgres**; worker stays on the always-on NUC.
