@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase";
+import { itemEditGuard, parseItemEdit } from "@/lib/item-edit";
 import { unfetchedDeleteGuard } from "@/lib/unfetched";
 
 export async function setReadState(itemId: number, read: boolean) {
@@ -18,6 +19,66 @@ export async function setReadState(itemId: number, read: boolean) {
   revalidatePath("/topics");
   revalidatePath("/clusters");
   revalidatePath("/all");
+}
+
+export type UpdateItemMetadataState =
+  | { ok: true; saved: boolean }
+  | { ok: false; error: string };
+
+export async function updateItemMetadata(
+  itemId: number,
+  _previousState: UpdateItemMetadataState,
+  formData: FormData,
+): Promise<UpdateItemMetadataState> {
+  if (!Number.isInteger(itemId) || itemId <= 0) {
+    return { ok: false, error: "Invalid article." };
+  }
+
+  const parsed = parseItemEdit({
+    title: String(formData.get("title") || ""),
+    snapshot: String(formData.get("snapshot") || ""),
+    subject: String(formData.get("subject") || ""),
+    topics: String(formData.get("topics") || ""),
+  });
+  if (!parsed.ok) {
+    return parsed;
+  }
+
+  const db = supabaseAdmin();
+  const { data: row, error: readError } = await db
+    .from("items")
+    .select("id, ingest_status")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (readError) {
+    return { ok: false, error: "Could not save edits." };
+  }
+  const blocked = itemEditGuard(
+    row ? { ingest_status: String(row.ingest_status) } : null,
+  );
+  if (blocked) {
+    return { ok: false, error: blocked };
+  }
+
+  const { error } = await db
+    .from("items")
+    .update({
+      title: parsed.fields.title,
+      snapshot: parsed.fields.snapshot,
+      subject: parsed.fields.subject,
+      topics: parsed.fields.topics,
+    })
+    .eq("id", itemId)
+    .eq("ingest_status", "ready");
+  if (error) {
+    return { ok: false, error: "Could not save edits." };
+  }
+  revalidatePath("/");
+  revalidatePath("/unread");
+  revalidatePath("/topics");
+  revalidatePath("/clusters");
+  revalidatePath("/all");
+  return { ok: true, saved: true };
 }
 
 const MAX_PDF_BYTES = 3.5 * 1024 * 1024;

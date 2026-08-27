@@ -259,6 +259,18 @@ input[type="text"] {
   margin-top: 0.75rem;
 }
 
+.item > .paste-form {
+  margin-top: 0;
+}
+
+.paste-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
 .paste-form textarea {
   width: 100%;
   padding: 0.7rem 0.85rem;

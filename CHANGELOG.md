@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Persistence target is **Supabase Postgres**; worker stays on the always-on NUC.
 - Groq chat retries on 429/5xx during bulk ingest.
 - Unfetched splits needs-text vs saved-for-fill-in; paste form closes on save; stubs can be deleted after confirm.
+- Corpus cards can overwrite headline, description, subject, and topics when ingest captured the wrong page.
 
 ### Added
 - Fetch/extract failures save `pending_body` stubs; Unfetched page for paste/PDF; daily NUC Groq fill-in before digest.
