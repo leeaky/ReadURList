@@ -15,9 +15,22 @@ _MAX_LLM_ATTEMPTS = 4
 _LLM_BACKOFF_SEC = 1.5
 # gpt-oss spends completion tokens on reasoning first; Groq's default 1024
 # often leaves empty content and json_object then 400s json_validate_failed.
-_MAX_COMPLETION_TOKENS = 8192
+# On-demand TPM is 8000: prompt + max_completion_tokens must fit that window.
+_GROQ_TPM_LIMIT = 8000
+_TARGET_COMPLETION_TOKENS = 2048
+_MIN_COMPLETION_TOKENS = 256
+_TPM_MARGIN = 64
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+
+
+def _estimate_tokens(*parts: str) -> int:
+    return max(1, sum(len(part) for part in parts) // 4)
+
+
+def _completion_budget(prompt_tokens: int) -> int:
+    room = _GROQ_TPM_LIMIT - prompt_tokens - _TPM_MARGIN
+    return max(_MIN_COMPLETION_TOKENS, min(_TARGET_COMPLETION_TOKENS, room))
 
 
 def _extract_json(text: str) -> str:
@@ -57,7 +70,6 @@ class GroqProvider(LLMProvider):
         kwargs: dict[str, Any] = {
             "model": model,
             "temperature": temperature,
-            "max_completion_tokens": _MAX_COMPLETION_TOKENS,
         }
 
         if schema is not None:
@@ -80,6 +92,10 @@ class GroqProvider(LLMProvider):
             messages.append({"role": "system", "content": system_text})
         messages.append({"role": "user", "content": user_prompt})
         kwargs["messages"] = messages
+        prompt_tokens = _estimate_tokens(*(m["content"] for m in messages))
+        kwargs["max_completion_tokens"] = _completion_budget(prompt_tokens)
+        if "gpt-oss" in model.lower():
+            kwargs["reasoning_effort"] = "low"
 
         last_exc: Exception | None = None
         for attempt in range(1, _MAX_LLM_ATTEMPTS + 1):

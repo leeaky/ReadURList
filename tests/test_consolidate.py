@@ -1,6 +1,22 @@
 from second_read.config import Settings
 from second_read.db import Item, get_session, init_db
-from second_read.tags.consolidate import maps_from_payload, maybe_consolidate_tags
+from second_read.tags.consolidate import (
+    consolidation_prompt,
+    maps_from_payload,
+    maybe_consolidate_tags,
+)
+
+
+def test_consolidation_prompt_lists_labels_not_article_bodies():
+    prompt = consolidation_prompt(
+        subjects=["Claude flavor 0", "Public health"],
+        topics=["LLM", "agents"],
+    )
+    assert "Claude flavor 0" in prompt
+    assert "Public health" in prompt
+    assert "LLM" in prompt
+    assert "title=" not in prompt
+    assert "extracted" not in prompt.lower()
 
 
 def test_maps_from_payload_reads_pair_lists():

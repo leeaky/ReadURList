@@ -32,9 +32,24 @@ def test_complete_uses_json_schema_strict_and_room_for_reasoning():
         temperature=0.2,
     )
     kwargs = completions.calls[0]
-    assert kwargs["max_completion_tokens"] >= 8192
+    assert kwargs["max_completion_tokens"] > 1024
+    prompt_tokens = sum(len(m["content"]) for m in kwargs["messages"]) // 4
+    assert prompt_tokens + kwargs["max_completion_tokens"] <= 8000
     fmt = kwargs["response_format"]
     assert fmt["type"] == "json_schema"
     assert fmt["json_schema"]["strict"] is True
     assert fmt["json_schema"]["name"] == "tag_consolidation"
     assert fmt["json_schema"]["schema"]["required"] == ["subject_maps", "topic_maps"]
+
+
+def test_complete_caps_completion_tokens_so_request_fits_tpm_limit():
+    provider, completions = _provider()
+    provider.complete(
+        "label " * 4000,
+        model="openai/gpt-oss-120b",
+        schema=CONSOLIDATE_SCHEMA,
+    )
+    kwargs = completions.calls[0]
+    prompt_tokens = sum(len(m["content"]) for m in kwargs["messages"]) // 4
+    assert prompt_tokens + kwargs["max_completion_tokens"] <= 8000
+    assert kwargs["max_completion_tokens"] >= 256

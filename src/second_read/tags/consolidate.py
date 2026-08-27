@@ -15,6 +15,17 @@ logger = logging.getLogger(__name__)
 BATCH = 80
 
 
+def consolidation_prompt(*, subjects: list[str], topics: list[str]) -> str:
+    return (
+        "Map near-duplicate labels onto shared buckets. "
+        "Use the existing strings exactly in from.\n"
+        "Subjects:\n"
+        + "\n".join(f"- {s}" for s in subjects)
+        + "\nTopics:\n"
+        + "\n".join(f"- {t}" for t in topics)
+    )
+
+
 def maps_from_payload(data: dict) -> tuple[dict[str, str], dict[str, str]]:
     def as_map(rows: object) -> dict[str, str]:
         out: dict[str, str] = {}
@@ -53,19 +64,11 @@ def maybe_consolidate_tags(llm: LLMProvider, settings: Settings) -> int:
         topic_maps: dict[str, str] = {}
         known_subjects = list(vocab.subjects)
         known_topics = list(vocab.topics)
-        for start in range(0, ready_count, BATCH):
-            chunk = ready[start : start + BATCH]
-            lines = [
-                f"id={row.id} | title={row.title} | subject={row.subject} | topics={', '.join(row.topics or [])}"
-                for row in chunk
-            ]
-            prompt = (
-                "Existing subjects so far:\n"
-                + "\n".join(f"- {s}" for s in known_subjects)
-                + "\nExisting topics so far:\n"
-                + "\n".join(f"- {t}" for t in known_topics)
-                + "\n\nItems:\n"
-                + "\n".join(lines)
+        for start in range(0, max(len(known_subjects), 1), BATCH):
+            subject_chunk = known_subjects[start : start + BATCH]
+            prompt = consolidation_prompt(
+                subjects=subject_chunk or known_subjects,
+                topics=known_topics,
             )
             raw = llm.complete(
                 prompt,
