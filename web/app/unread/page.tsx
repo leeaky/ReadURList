@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ItemCard, Shell } from "@/components/ui";
+import { UNREAD_BLURB } from "@/lib/ranking-copy";
 import { supabaseAdmin, type ItemRow } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -39,6 +40,7 @@ export default async function UnreadPage({
           Stale (14+ days)
         </Link>
       </nav>
+      <p className="empty">{UNREAD_BLURB}</p>
       {items.length === 0 ? (
         <p className="empty">No unread items.</p>
       ) : (

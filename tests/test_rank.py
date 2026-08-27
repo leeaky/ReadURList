@@ -182,3 +182,75 @@ def test_clusters_group_similar_keywords():
     llm_cluster = next(c for c in clusters if 1 in c.item_ids)
     assert 2 in llm_cluster.item_ids
     assert 3 not in llm_cluster.item_ids
+
+
+def test_shared_subject_and_topics_cluster_despite_disjoint_keywords():
+    a = _item(
+        1,
+        subject="llms",
+        topics=["large language models", "mixture of experts"],
+        keywords=["kimi", "k3", "moonshot"],
+    )
+    b = _item(
+        2,
+        subject="llms",
+        topics=["large language models", "mixture of experts"],
+        keywords=["llada", "diffusion", "qwen"],
+    )
+    c = _item(
+        3,
+        subject="public health",
+        topics=["tobacco"],
+        keywords=["schroeder", "shattuck"],
+    )
+    clusters = cluster_items([a, b, c], threshold=0.3)
+    llm = next(g for g in clusters if 1 in g.item_ids)
+    assert 2 in llm.item_ids
+    assert 3 not in llm.item_ids
+
+
+def test_shared_bucket_is_not_a_near_duplicate_when_keywords_differ():
+    a = _item(
+        1,
+        subject="llms",
+        topics=["large language models", "mixture of experts"],
+        keywords=["kimi", "k3", "moonshot"],
+        priority=5,
+    )
+    b = _item(
+        2,
+        subject="llms",
+        topics=["large language models", "mixture of experts"],
+        keywords=["llada", "diffusion", "qwen"],
+        priority=5,
+        days_ago=0,
+    )
+    picks = score_unread([a, b], now=NOW, top_n=5)
+    assert {p.item_id for p in picks} == {1, 2}
+
+
+def test_near_dup_still_uses_keyword_overlap():
+    a = _item(
+        1,
+        subject="llms",
+        topics=["large language models"],
+        keywords=["transformer", "attention", "gpt", "openai"],
+        read=True,
+    )
+    b = _item(
+        2,
+        subject="llms",
+        topics=["large language models"],
+        keywords=["transformer", "attention", "gpt", "openai"],
+        days_ago=0,
+    )
+    other = _item(
+        3,
+        subject="climate",
+        topics=["ice"],
+        keywords=["antarctica"],
+        days_ago=0,
+    )
+    picks = score_unread([a, b, other], now=NOW, top_n=5)
+    assert 2 not in {p.item_id for p in picks}
+    assert 3 in {p.item_id for p in picks}

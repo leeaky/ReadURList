@@ -5,6 +5,7 @@ from second_read.db import Item, get_session
 from second_read.ingest.extract import ExtractError, FetchError, extract_article
 from second_read.ingest.summarize import summarize_article
 from second_read.llm.base import LLMProvider
+from second_read.tags.vocab import load_vocabulary
 
 INGEST_READY = "ready"
 INGEST_PENDING_BODY = "pending_body"
@@ -80,12 +81,15 @@ def ingest_url(
     except ExtractError as exc:
         return _save_stub(url=url, title=exc.title, note=str(exc), note_clean=note_clean)
 
+    vocab = load_vocabulary()
     result = summarize_article(
         llm,
         model=settings.model_ingest,
         url=url,
         title_hint=title_hint,
         text=text,
+        existing_subjects=vocab.subjects,
+        existing_topics=vocab.topics,
     )
 
     session = get_session()

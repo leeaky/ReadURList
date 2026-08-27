@@ -1,5 +1,6 @@
 import { ItemCard, Shell } from "@/components/ui";
 import { isReadyItem } from "@/lib/item-edit";
+import { CLUSTERS_BLURB } from "@/lib/ranking-copy";
 import { supabaseAdmin, type ClusterRow, type ItemRow } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +41,7 @@ export default async function ClustersPage() {
 
   return (
     <Shell current="/clusters">
+      <p className="empty">{CLUSTERS_BLURB}</p>
       {blocks.length === 0 ? (
         <p className="empty">No clusters yet. Run the daily job on the NUC.</p>
       ) : (

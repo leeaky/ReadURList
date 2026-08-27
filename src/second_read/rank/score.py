@@ -45,9 +45,16 @@ def _norm(text: str) -> str:
     return (text or "").strip().lower()
 
 
-def _tags(item: RankItem) -> set[str]:
-    parts = [item.subject, *item.topics, *item.keywords]
-    return {_norm(p) for p in parts if p and _norm(p)}
+def _parts(*values: str) -> set[str]:
+    return {_norm(p) for p in values if p and _norm(p)}
+
+
+def _cluster_tags(item: RankItem) -> set[str]:
+    return _parts(item.subject, *item.topics)
+
+
+def _dup_tags(item: RankItem) -> set[str]:
+    return _parts(item.subject, *item.topics, *item.keywords)
 
 
 def jaccard(a: Sequence[str] | set[str], b: Sequence[str] | set[str]) -> float:
@@ -65,7 +72,7 @@ def _mean(values: list[float]) -> float:
 
 
 def cluster_items(items: Sequence[RankItem], threshold: float = CLUSTER_JACCARD) -> list[Cluster]:
-    """Connected components over keyword/topic Jaccard edges."""
+    """Connected components over subject/topic Jaccard edges."""
     n = len(items)
     if n == 0:
         return []
@@ -84,7 +91,7 @@ def cluster_items(items: Sequence[RankItem], threshold: float = CLUSTER_JACCARD)
 
     for i in range(n):
         for j in range(i + 1, n):
-            if jaccard(_tags(items[i]), _tags(items[j])) >= threshold:
+            if jaccard(_cluster_tags(items[i]), _cluster_tags(items[j])) >= threshold:
                 union(i, j)
 
     groups: dict[int, list[RankItem]] = {}
@@ -112,7 +119,7 @@ def _centrality(item: RankItem, unread: Sequence[RankItem]) -> float:
     others = [u for u in unread if u.id != item.id]
     if not others:
         return 0.0
-    return _mean([jaccard(_tags(item), _tags(o)) for o in others])
+    return _mean([jaccard(_cluster_tags(item), _cluster_tags(o)) for o in others])
 
 
 def _recency(item: RankItem, now: datetime) -> float:
@@ -147,7 +154,7 @@ def _priority_norm(item: RankItem) -> float:
 
 
 def _is_near_dup(a: RankItem, b: RankItem) -> bool:
-    return jaccard(_tags(a), _tags(b)) >= DUPLICATE_JACCARD
+    return jaccard(_dup_tags(a), _dup_tags(b)) >= DUPLICATE_JACCARD
 
 
 def _canonical_key(item: RankItem) -> tuple:
