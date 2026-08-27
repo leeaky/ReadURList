@@ -103,6 +103,8 @@ npm install
 npm run dev
 ```
 
+`web/.env.local` usually points at the **same Supabase project as production**. Mark read is fine. Do not use **Send to Unfetched** (or other destructive UI) from localhost against that database — it clears article text and fill-in for real items.
+
 Views: Today (ranked picks + reading path), Unread (optional stale 14+ days), **Unfetched** (stubs awaiting article text), Topics, Clusters, All. Mark read/unread on every card.
 
 **Unfetched:** lists items the worker could not retrieve. Open **Paste article**, paste text or upload a PDF (max 3.5 MB — Vercel serverless limit). Saved text is ingested on the NUC at the next daily digest (or when you run `/digest` / `second-read-digest`). Stubs are hidden from Today, Unread, Topics, Clusters, and All until ingest completes.
@@ -120,6 +122,12 @@ A local SQLite file is not a backup once capture writes to the cloud.
 ## Models
 
 Change Groq model: set `MODEL_INGEST` in `.env` and restart. Default is `openai/gpt-oss-120b` (Groq retired `llama-3.3-70b-versatile` for free/developer on 16 Aug 2026). Ranking reasons are templates, not an extra LLM call.
+
+## Git
+
+One feature branch per issue (`cursor/…` is fine). Merge to `main`, then delete the branch locally and on GitHub (`git push origin --delete <branch>`). `git fetch --prune` so stale `origin/…` names disappear.
+
+Do not commit `.env`, `web/.env.local`, `web/node_modules`, `web/.next`, or `web/tsconfig.tsbuildinfo` (already gitignored).
 
 ## Tests
 
