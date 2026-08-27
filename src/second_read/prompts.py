@@ -33,9 +33,9 @@ INGEST_SCHEMA = {
 }
 
 CONSOLIDATE_SYSTEM = """You merge near-duplicate subject and topic labels for a personal reading corpus.
-Return JSON only. Merge labels that mean the same bucket (e.g. Claude Code / Claude Code training / Claude 101 course → Claude Code).
+Return JSON only — never an empty response. Merge labels that mean the same bucket (e.g. Claude Code / Claude Code training / Claude 101 course → Claude Code).
 Do not collapse distinct domains into a tiny generic list (public health stays separate from LLM papers).
-Do not invent new items. Identity mapping is allowed. Do not output keywords, titles, or snapshots."""
+Do not invent new items. Identity mapping is allowed; empty arrays are valid. Do not output keywords, titles, or snapshots."""
 
 CONSOLIDATE_SCHEMA = {
     "name": "tag_consolidation",

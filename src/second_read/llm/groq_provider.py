@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 
 _MAX_LLM_ATTEMPTS = 4
 _LLM_BACKOFF_SEC = 1.5
+# gpt-oss spends completion tokens on reasoning first; Groq's default 1024
+# often leaves empty content and json_object then 400s json_validate_failed.
+_MAX_COMPLETION_TOKENS = 8192
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 
@@ -54,17 +57,24 @@ class GroqProvider(LLMProvider):
         kwargs: dict[str, Any] = {
             "model": model,
             "temperature": temperature,
+            "max_completion_tokens": _MAX_COMPLETION_TOKENS,
         }
 
         if schema is not None:
             schema_body = schema["schema"] if "schema" in schema else schema
+            schema_name = schema["name"] if "name" in schema else "result"
             system_text = (
                 (system_text + "\n\n" if system_text else "")
-                + "Respond with a single valid JSON object only — no markdown fences, no prose.\n"
-                f"JSON schema:\n{json.dumps(schema_body)}"
+                + "Respond with a single valid JSON object only — no markdown fences, no prose."
             )
-            # Groq supports json_object; full json_schema is unreliable across models
-            kwargs["response_format"] = {"type": "json_object"}
+            kwargs["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": schema_name,
+                    "strict": True,
+                    "schema": schema_body,
+                },
+            }
 
         if system_text:
             messages.append({"role": "system", "content": system_text})
