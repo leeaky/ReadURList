@@ -35,9 +35,3 @@ export type DailyPickRow = {
   reason: string;
   items: ItemRow | ItemRow[] | null;
 };
-
-export type ClusterRow = {
-  id: number;
-  label: string;
-  computed_at: string;
-};

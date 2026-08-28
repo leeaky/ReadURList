@@ -23,7 +23,6 @@ export async function setReadState(itemId: number, read: boolean) {
   revalidatePath("/");
   revalidatePath("/unread");
   revalidatePath("/topics");
-  revalidatePath("/clusters");
   revalidatePath("/all");
 }
 
@@ -82,7 +81,6 @@ export async function updateItemMetadata(
   revalidatePath("/");
   revalidatePath("/unread");
   revalidatePath("/topics");
-  revalidatePath("/clusters");
   revalidatePath("/all");
   return { ok: true, saved: true };
 }
@@ -130,7 +128,6 @@ export async function sendItemToUnfetched(
   revalidatePath("/");
   revalidatePath("/unread");
   revalidatePath("/topics");
-  revalidatePath("/clusters");
   revalidatePath("/all");
   revalidatePath("/unfetched");
   redirect("/unfetched");

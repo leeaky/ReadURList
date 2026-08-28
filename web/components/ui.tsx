@@ -7,7 +7,6 @@ export function Nav({ current }: { current: string }) {
     ["/", "Today"],
     ["/unread", "Unread"],
     ["/topics", "Topics"],
-    ["/clusters", "Clusters"],
     ["/all", "All"],
     ["/unfetched", "Unfetched"],
   ] as const;
