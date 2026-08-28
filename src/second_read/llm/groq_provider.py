@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 from typing import Any, Optional
 
 from openai import APIStatusError, OpenAI, RateLimitError
@@ -14,12 +15,13 @@ logger = logging.getLogger(__name__)
 _MAX_LLM_ATTEMPTS = 4
 _LLM_BACKOFF_SEC = 1.5
 # gpt-oss spends completion tokens on reasoning first; Groq's default 1024
-# often leaves empty content and json_object then 400s json_validate_failed.
+# often leaves empty content and json_schema then 400s json_validate_failed.
 # On-demand TPM is 8000: prompt + max_completion_tokens must fit that window.
+# Do not cap completion at 2048 — consolidation reasoning can exhaust that
+# and Groq returns failed_generation: ''.
 _GROQ_TPM_LIMIT = 8000
-_TARGET_COMPLETION_TOKENS = 2048
 _MIN_COMPLETION_TOKENS = 256
-_TPM_MARGIN = 64
+_TPM_MARGIN = 256
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 
@@ -30,7 +32,19 @@ def _estimate_tokens(*parts: str) -> int:
 
 def _completion_budget(prompt_tokens: int) -> int:
     room = _GROQ_TPM_LIMIT - prompt_tokens - _TPM_MARGIN
-    return max(_MIN_COMPLETION_TOKENS, min(_TARGET_COMPLETION_TOKENS, room))
+    return max(_MIN_COMPLETION_TOKENS, room)
+
+
+def _empty_json_validate(exc: BaseException) -> bool:
+    body = getattr(exc, "body", None)
+    if not isinstance(body, dict):
+        return False
+    err = body.get("error") if isinstance(body.get("error"), dict) else body
+    if not isinstance(err, dict):
+        return False
+    return err.get("code") == "json_validate_failed" and not (
+        err.get("failed_generation") or ""
+    )
 
 
 def _extract_json(text: str) -> str:
@@ -108,19 +122,14 @@ class GroqProvider(LLMProvider):
                 return content
             except (RateLimitError, APIStatusError) as exc:
                 status = getattr(exc, "status_code", None)
-                retryable = isinstance(exc, RateLimitError) or status in {
-                    408,
-                    429,
-                    500,
-                    502,
-                    503,
-                    504,
-                }
+                retryable = (
+                    isinstance(exc, RateLimitError)
+                    or status in {408, 429, 500, 502, 503, 504}
+                    or _empty_json_validate(exc)
+                )
                 last_exc = exc
                 if not retryable or attempt == _MAX_LLM_ATTEMPTS:
                     raise
-                import time
-
                 wait = _LLM_BACKOFF_SEC * (2 ** (attempt - 1))
                 logger.warning(
                     "Groq %s (attempt %s/%s); retry in %.1fs",

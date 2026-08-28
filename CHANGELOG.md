@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Clusters browse is gone. Topics (by subject) is the grouping; ranking no longer uses cluster centrality (weights 0.45 / 0.20 / 0.20 / 0.15).
-- Groq JSON calls use structured outputs, cap completion tokens to the 8000 TPM window, and consolidate from unique labels so the daily remap fits on-demand Groq.
+- Groq JSON calls use structured outputs, spend remaining TPM on completion tokens (gpt-oss reasoning), retry empty json_validate_failed, and consolidate from unique labels so the daily remap fits on-demand Groq.
 - Ingest reuses existing ready subjects/topics; the daily job consolidates near-duplicate tags when unique subjects are more than half of ready items.
 - Ranking clusters on subject + topics; keywords are only for near-duplicate detection.
 - Today explains ranking and shows pick rank; Topics and Unread say how they relate.
