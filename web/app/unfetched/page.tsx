@@ -21,7 +21,9 @@ export default async function UnfetchedPage() {
   return (
     <AppFrame current="/unfetched" showSidebar={false} facetItems={[]}>
       <h1 className="page-title">Unfetched</h1>
-      <p className="page-blurb text-muted">Links saved from Telegram, waiting for a summary.</p>
+      <p className="page-blurb text-muted">
+        Links saved from Telegram. Paste the article text or attach a PDF so it can be summarized.
+      </p>
       <UnfetchedList items={items} />
     </AppFrame>
   );

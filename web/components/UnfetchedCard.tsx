@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import {
   deleteUnfetchedItem,
   submitArticleBody,
@@ -18,8 +18,10 @@ function formatDate(iso: string | null) {
 }
 
 export function UnfetchedCard({ item }: { item: ItemRow }) {
-  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"idle" | "paste" | "pdf">("idle");
   const [confirming, setConfirming] = useState(false);
+  const [pdfName, setPdfName] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
   const hasBody = hasExtractedBody(item.extracted_text);
   const action = submitArticleBody.bind(null, item.id);
   const initialState: SubmitArticleBodyState = { ok: true, saved: false };
@@ -33,56 +35,81 @@ export function UnfetchedCard({ item }: { item: ItemRow }) {
 
   useEffect(() => {
     if (state.ok && state.saved) {
-      setOpen(false);
+      setMode("idle");
+      setPdfName("");
+      if (fileRef.current) {
+        fileRef.current.value = "";
+      }
     }
   }, [state]);
 
   const status = hasBody ? "Saved for today’s fill-in" : "Needs article text";
+  const open = confirming || mode !== "idle";
+  const cardClass = hasBody
+    ? open
+      ? "article-card is-queued is-open"
+      : "article-card is-queued"
+    : "article-card is-needs";
+
+  function clearPdf() {
+    setPdfName("");
+    if (fileRef.current) {
+      fileRef.current.value = "";
+    }
+  }
+
+  function startPaste() {
+    setConfirming(false);
+    clearPdf();
+    setMode("paste");
+  }
+
+  function startPdf() {
+    setConfirming(false);
+    setMode("pdf");
+    fileRef.current?.click();
+  }
+
+  function startDelete() {
+    setMode("idle");
+    clearPdf();
+    setConfirming(true);
+  }
 
   return (
-    <div>
-      <div className="unfetched-row">
-        <button
-          type="button"
-          className="article-header"
-          onClick={() => {
-            setConfirming(false);
-            setOpen((value) => !value);
-          }}
-          aria-expanded={open}
-        >
-          <div className="article-header-main">
-            <div className="unfetched-url">{item.url}</div>
-            <div className="unfetched-date text-muted">
-              Added {formatDate(item.created_at)} · {status}
-            </div>
-            {item.note ? <div className="unfetched-date text-muted">{item.note}</div> : null}
-          </div>
-        </button>
-        {confirming ? null : (
-          <form action={deleteFormAction}>
-            <button
-              type="submit"
-              className="btn btn-secondary btn-icon"
-              aria-label="Delete"
-              onClick={(event) => {
-                event.preventDefault();
-                setOpen(false);
-                setConfirming(true);
-              }}
+    <article className={cardClass}>
+      <div className="article-header-main">
+        <div className="article-meta-row">
+          <span className={hasBody ? "tag tag-neutral" : "tag tag-outline"}>{status}</span>
+        </div>
+        {item.title.trim() ? (
+          <>
+            <div className="article-title">{item.title}</div>
+            <a
+              className="article-url"
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M3 6h18" />
-                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                <path d="M10 11v6" />
-                <path d="M14 11v6" />
-              </svg>
-            </button>
-          </form>
+              {item.url}
+            </a>
+          </>
+        ) : (
+          <a
+            className="article-title"
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {item.url}
+          </a>
         )}
+        {item.note ? <p className="article-note text-muted">{item.note}</p> : null}
+        <div className="article-date text-muted">Added {formatDate(item.created_at)}</div>
       </div>
+
       {confirming ? (
-        <div className="unfetched-expand">
+        <div className="article-body">
           <div className="article-actions">
             <p className="article-why text-muted confirm-prompt">Delete this stub?</p>
             <form action={deleteFormAction}>
@@ -105,23 +132,117 @@ export function UnfetchedCard({ item }: { item: ItemRow }) {
             ) : null}
           </div>
         </div>
-      ) : null}
-      {open && !confirming ? (
-        <div className="unfetched-expand">
-          <form action={formAction} className="paste-form">
-            <textarea className="input" name="body" rows={8} placeholder="Paste article text…" />
-            <input type="file" name="pdf" accept="application/pdf" />
-            <button type="submit" className="btn btn-primary" disabled={pending}>
-              {pending ? "Saving…" : "Save for fill-in"}
+      ) : (
+        <>
+          <div className="article-actions">
+            <button
+              type="button"
+              className={hasBody ? "btn btn-secondary" : "btn btn-primary"}
+              aria-pressed={mode === "paste"}
+              onClick={startPaste}
+            >
+              Paste text
             </button>
-            {!state.ok ? (
-              <p className="error" role="alert" aria-live="polite">
-                {state.error}
-              </p>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              aria-pressed={mode === "pdf"}
+              onClick={startPdf}
+            >
+              Attach PDF
+            </button>
+            <button type="button" className="btn btn-secondary" onClick={startDelete}>
+              Delete
+            </button>
+          </div>
+          {mode === "paste" ? (
+            <form action={formAction} className="paste-form article-body">
+              <div className="field">
+                <label htmlFor={`body-${item.id}`}>Article text</label>
+                <textarea
+                  id={`body-${item.id}`}
+                  className="input"
+                  name="body"
+                  rows={8}
+                  placeholder="Paste the article text here"
+                  autoFocus
+                />
+              </div>
+              <div className="article-actions">
+                <button type="submit" className="btn btn-primary" disabled={pending}>
+                  {pending ? "Saving…" : "Save for fill-in"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setMode("idle")}
+                  disabled={pending}
+                >
+                  Cancel
+                </button>
+                {!state.ok ? (
+                  <p className="error" role="alert" aria-live="polite">
+                    {state.error}
+                  </p>
+                ) : null}
+              </div>
+            </form>
+          ) : null}
+          <form
+            action={formAction}
+            className="paste-form article-body"
+            hidden={mode !== "pdf"}
+          >
+            <input
+              ref={fileRef}
+              id={`pdf-${item.id}`}
+              className="visually-hidden"
+              type="file"
+              name="pdf"
+              accept="application/pdf"
+              aria-label="PDF file"
+              tabIndex={-1}
+              onChange={(event) => {
+                setPdfName(event.target.files?.[0]?.name ?? "");
+                setMode("pdf");
+              }}
+            />
+            {mode === "pdf" ? (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => fileRef.current?.click()}
+                >
+                  {pdfName || "Choose PDF"}
+                </button>
+                <p className="article-date text-muted">PDF, max 3.5 MB. Text is extracted on save.</p>
+                <div className="article-actions">
+                  <button type="submit" className="btn btn-primary" disabled={pending || !pdfName}>
+                    {pending ? "Saving…" : "Save for fill-in"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setMode("idle");
+                      clearPdf();
+                    }}
+                    disabled={pending}
+                  >
+                    Cancel
+                  </button>
+                  {!state.ok ? (
+                    <p className="error" role="alert" aria-live="polite">
+                      {state.error}
+                    </p>
+                  ) : null}
+                </div>
+              </>
             ) : null}
           </form>
-        </div>
-      ) : null}
-    </div>
+        </>
+      )}
+    </article>
   );
 }

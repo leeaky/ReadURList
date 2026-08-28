@@ -140,6 +140,11 @@ a {
   background: color-mix(in srgb, var(--color-text) 6%, transparent);
 }
 
+.btn-secondary[aria-pressed="true"] {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
 .btn-ghost {
   background: transparent;
   color: var(--color-text);
@@ -156,7 +161,9 @@ a {
 .btn-icon {
   width: 32px;
   height: 32px;
+  min-width: 32px;
   padding: 0;
+  flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -238,12 +245,14 @@ textarea.input {
 .site-header {
   border-bottom: 2px solid var(--color-divider);
   padding: var(--space-3) var(--space-8);
+  min-width: 0;
 }
 
 .site-header-row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  min-width: 0;
 }
 
 .brand-lockup {
@@ -254,6 +263,7 @@ textarea.input {
   color: inherit;
   text-decoration: none;
   min-width: 0;
+  overflow: hidden;
 }
 
 .brand-mark {
@@ -272,19 +282,25 @@ textarea.input {
 .brand-tagline {
   font-size: 12px;
   margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .header-tools {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .search-wrap {
   position: relative;
-  width: min(260px, 100%);
-  flex: none;
+  flex: 1 1 12rem;
+  width: auto;
+  min-width: 0;
+  max-width: 260px;
 }
 
 .search-wrap svg {
@@ -298,6 +314,7 @@ textarea.input {
 
 .search-wrap .input {
   padding-left: 30px;
+  min-width: 0;
 }
 
 .tabs {
@@ -449,7 +466,7 @@ textarea.input {
 
 .article-card {
   background: var(--color-surface);
-  padding: clamp(var(--space-2), 0.9vw, var(--space-4));
+  padding: var(--space-4);
   margin-bottom: clamp(var(--space-3), 1.2vw, var(--space-4));
   border-radius: var(--radius-md);
   min-width: 0;
@@ -459,6 +476,34 @@ textarea.input {
 
 .article-card.is-read {
   opacity: 0.6;
+}
+
+.article-card.is-needs {
+  border-left: 3px solid var(--color-accent);
+}
+
+.article-card.is-queued {
+  background: transparent;
+}
+
+.article-card.is-queued.is-open {
+  background: var(--color-surface);
+}
+
+.article-card.is-queued .article-url {
+  color: inherit;
+}
+
+.unfetched-section.is-muted {
+  opacity: 0.42;
+}
+
+.unfetched-section.is-muted:focus-within {
+  opacity: 1;
+}
+
+.section-title.is-muted {
+  font-weight: 600;
 }
 
 .article-header {
@@ -554,8 +599,10 @@ textarea.input {
 }
 
 .article-url {
+  display: block;
   font-size: 12px;
   word-break: break-all;
+  margin-top: 2px;
 }
 
 .article-date {
@@ -600,22 +647,19 @@ textarea.input {
   color: inherit;
 }
 
-.unfetched-list {
-  margin-top: var(--space-4);
+.section-title {
+  font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight);
+  font-size: 16px;
+  margin: var(--space-4) 0 0;
 }
 
-.unfetched-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--color-divider);
+section + section .section-title {
+  margin-top: var(--space-6);
 }
 
-.unfetched-row .article-header {
-  flex: 1;
-  min-width: 0;
+.section-title + .article-list {
+  margin-top: var(--space-3);
 }
 
 .confirm-prompt {
@@ -623,30 +667,25 @@ textarea.input {
   margin: 0;
 }
 
-.unfetched-url {
-  font-size: 13px;
-  word-break: break-all;
-  color: inherit;
-  text-decoration: none;
-}
-
-.unfetched-url:hover {
-  color: var(--color-accent);
-}
-
-.unfetched-date {
-  font-size: 11px;
-  margin-top: 2px;
-}
-
-.unfetched-expand {
-  padding: var(--space-3) 0 var(--space-4);
-  border-bottom: 1px solid var(--color-divider);
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .paste-form {
   display: grid;
   gap: var(--space-3);
+}
+
+.paste-form[hidden] {
+  display: none;
 }
 
 .login-page {
@@ -691,11 +730,11 @@ textarea.input {
 
   .site-header-row {
     flex-wrap: wrap;
-    align-items: flex-start;
+    align-items: center;
   }
 
   .brand-lockup {
-    flex: 1;
+    flex: 1 1 auto;
     min-width: 0;
     margin-right: 0;
   }
@@ -705,8 +744,9 @@ textarea.input {
   }
 
   .search-wrap {
-    flex: 1 1 100%;
-    width: auto;
+    flex: 1 0 100%;
+    max-width: none;
+    width: 100%;
     order: 3;
     margin-top: var(--space-3);
   }
@@ -808,10 +848,7 @@ textarea.input {
   .btn-icon {
     width: 44px;
     height: 44px;
-  }
-
-  .unfetched-row {
-    align-items: flex-start;
+    min-width: 44px;
   }
 
   .login-page {
