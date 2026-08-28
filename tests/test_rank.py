@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from second_read.rank.score import RankItem, cluster_items, score_unread
+from second_read.rank.score import RankItem, score_unread
 
 NOW = datetime(2026, 8, 20, 8, 0, tzinfo=timezone.utc)
 
@@ -171,42 +171,30 @@ def test_clearing_read_at_returns_item_to_pool():
     assert [p.item_id for p in score_unread([item], now=NOW, top_n=5)] == [1]
 
 
-def test_clusters_group_similar_keywords():
-    items = [
-        _item(1, subject="llms", keywords=["gpt", "openai", "transformer"], topics=["ai"]),
-        _item(2, subject="llms", keywords=["gpt", "openai", "chat"], topics=["ai"]),
-        _item(3, subject="climate", keywords=["ice", "melt"], topics=["climate"]),
-    ]
-    clusters = cluster_items(items, threshold=0.3)
-    assert len(clusters) >= 2
-    llm_cluster = next(c for c in clusters if 1 in c.item_ids)
-    assert 2 in llm_cluster.item_ids
-    assert 3 not in llm_cluster.item_ids
+def test_ranking_weights_are_four_signals_summing_to_one():
+    import second_read.rank.score as score
+
+    assert (score.W_DEMAND, score.W_RECENCY, score.W_NOVELTY, score.W_PRIORITY) == (
+        0.45,
+        0.20,
+        0.20,
+        0.15,
+    )
+    assert abs(
+        score.W_DEMAND + score.W_RECENCY + score.W_NOVELTY + score.W_PRIORITY - 1.0
+    ) < 1e-9
+    assert not hasattr(score, "W_CENTRAL")
+    assert not hasattr(score, "cluster_items")
 
 
-def test_shared_subject_and_topics_cluster_despite_disjoint_keywords():
-    a = _item(
-        1,
-        subject="llms",
-        topics=["large language models", "mixture of experts"],
-        keywords=["kimi", "k3", "moonshot"],
-    )
-    b = _item(
-        2,
-        subject="llms",
-        topics=["large language models", "mixture of experts"],
-        keywords=["llada", "diffusion", "qwen"],
-    )
-    c = _item(
-        3,
-        subject="public health",
-        topics=["tobacco"],
-        keywords=["schroeder", "shattuck"],
-    )
-    clusters = cluster_items([a, b, c], threshold=0.3)
-    llm = next(g for g in clusters if 1 in g.item_ids)
-    assert 2 in llm.item_ids
-    assert 3 not in llm.item_ids
+def test_demand_reason_says_you_keep_saving_not_cluster():
+    items = [_item(i, subject="llms", days_ago=1, priority=3) for i in range(1, 5)]
+    items.append(_item(9, subject="climate", days_ago=1, priority=3))
+    picks = score_unread(items, now=NOW, top_n=5)
+    assert picks
+    assert all("cluster" not in p.reason.lower() for p in picks)
+    llm = [p for p in picks if "llms" in p.reason or "keep saving" in p.reason]
+    assert any("you keep saving llms" in p.reason for p in picks)
 
 
 def test_shared_bucket_is_not_a_near_duplicate_when_keywords_differ():

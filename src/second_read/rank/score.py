@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Sequence
 
 DUPLICATE_JACCARD = 0.6
-CLUSTER_JACCARD = 0.3
 PATH_WINDOW = 10
 
-W_DEMAND = 0.35
-W_CENTRAL = 0.25
-W_RECENCY = 0.15
-W_NOVELTY = 0.15
-W_PRIORITY = 0.10
+W_DEMAND = 0.45
+W_RECENCY = 0.20
+W_NOVELTY = 0.20
+W_PRIORITY = 0.15
 
 
 @dataclass
@@ -35,22 +33,12 @@ class Pick:
     rank: int = 0
 
 
-@dataclass
-class Cluster:
-    label: str
-    item_ids: list[int] = field(default_factory=list)
-
-
 def _norm(text: str) -> str:
     return (text or "").strip().lower()
 
 
 def _parts(*values: str) -> set[str]:
     return {_norm(p) for p in values if p and _norm(p)}
-
-
-def _cluster_tags(item: RankItem) -> set[str]:
-    return _parts(item.subject, *item.topics)
 
 
 def _dup_tags(item: RankItem) -> set[str]:
@@ -65,61 +53,12 @@ def jaccard(a: Sequence[str] | set[str], b: Sequence[str] | set[str]) -> float:
     return len(sa & sb) / len(sa | sb)
 
 
-def _mean(values: list[float]) -> float:
-    if not values:
-        return 0.0
-    return sum(values) / len(values)
-
-
-def cluster_items(items: Sequence[RankItem], threshold: float = CLUSTER_JACCARD) -> list[Cluster]:
-    """Connected components over subject/topic Jaccard edges."""
-    n = len(items)
-    if n == 0:
-        return []
-    parent = list(range(n))
-
-    def find(i: int) -> int:
-        while parent[i] != i:
-            parent[i] = parent[parent[i]]
-            i = parent[i]
-        return i
-
-    def union(i: int, j: int) -> None:
-        ri, rj = find(i), find(j)
-        if ri != rj:
-            parent[rj] = ri
-
-    for i in range(n):
-        for j in range(i + 1, n):
-            if jaccard(_cluster_tags(items[i]), _cluster_tags(items[j])) >= threshold:
-                union(i, j)
-
-    groups: dict[int, list[RankItem]] = {}
-    for i, item in enumerate(items):
-        groups.setdefault(find(i), []).append(item)
-
-    clusters: list[Cluster] = []
-    for group in groups.values():
-        subjects = [_norm(g.subject) or "misc" for g in group]
-        label = max(set(subjects), key=subjects.count)
-        clusters.append(Cluster(label=label, item_ids=[g.id for g in group]))
-    clusters.sort(key=lambda c: (-len(c.item_ids), c.label))
-    return clusters
-
-
 def _topic_demand(item: RankItem, unread: Sequence[RankItem]) -> float:
     if not unread:
         return 0.0
     subject = _norm(item.subject)
     share = sum(1 for u in unread if _norm(u.subject) == subject)
     return share / len(unread)
-
-
-def _centrality(item: RankItem, unread: Sequence[RankItem]) -> float:
-    others = [u for u in unread if u.id != item.id]
-    if not others:
-        return 0.0
-    return _mean([jaccard(_cluster_tags(item), _cluster_tags(o)) for o in others])
 
 
 def _recency(item: RankItem, now: datetime) -> float:
@@ -191,9 +130,7 @@ def _keep_canonical_unread(unread: list[RankItem]) -> list[RankItem]:
 
 def _reason(item: RankItem, *, demand: float, novelty: float, dup_note: str | None) -> str:
     bits: list[str] = []
-    if demand >= 0.4:
-        bits.append(f"dense unread cluster on {item.subject or 'this topic'}")
-    elif demand >= 0.2:
+    if demand >= 0.2:
         bits.append(f"you keep saving {item.subject or 'this topic'}")
     if novelty >= 1.0:
         bits.append("not yet on your reading path")
@@ -226,13 +163,11 @@ def score_unread(
         if any(_is_near_dup(item, r) for r in read):
             continue
         demand = _topic_demand(item, unread)
-        central = _centrality(item, unread)
         recency = _recency(item, now)
         novelty = _path_novelty(item, recent_read)
         prio = _priority_norm(item)
         total = (
             W_DEMAND * demand
-            + W_CENTRAL * central
             + W_RECENCY * recency
             + W_NOVELTY * novelty
             + W_PRIORITY * prio

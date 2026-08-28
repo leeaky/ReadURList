@@ -8,8 +8,6 @@ from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 
 from second_read.config import Settings
 from second_read.db import (
-    Cluster,
-    ClusterItem,
     DailyPick,
     DigestRun,
     Item,
@@ -18,7 +16,7 @@ from second_read.db import (
 from second_read.ingest.complete import complete_pending_bodies
 from second_read.llm.base import LLMProvider
 from second_read.rank.digest import should_send_digest
-from second_read.rank.score import RankItem, cluster_items, jaccard, score_unread
+from second_read.rank.score import RankItem, jaccard, score_unread
 from second_read.tags.consolidate import maybe_consolidate_tags
 
 logger = logging.getLogger(__name__)
@@ -40,7 +38,7 @@ def _to_rank_item(row: Item) -> RankItem:
 
 
 def persist_ranking(*, now: datetime | None = None) -> list[DailyPick]:
-    """Rebuild clusters, similar-to flags, and today's daily_picks. No Telegram."""
+    """Rebuild similar-to flags and today's daily_picks. No Telegram."""
     now = now or datetime.now().astimezone()
     today = now.date()
     session = get_session()
@@ -66,15 +64,6 @@ def persist_ranking(*, now: datetime | None = None) -> list[DailyPick]:
                     best_j = sim
                     best = other.id
             row.similar_to_item_id = best
-
-        session.query(ClusterItem).delete()
-        session.query(Cluster).delete()
-        for group in cluster_items(rank_items):
-            cluster = Cluster(label=group.label, computed_at=now)
-            session.add(cluster)
-            session.flush()
-            for item_id in group.item_ids:
-                session.add(ClusterItem(cluster_id=cluster.id, item_id=item_id))
 
         session.query(DailyPick).filter(DailyPick.run_on == today).delete()
         picks = score_unread(rank_items, now=now, top_n=5)
