@@ -1,51 +1,45 @@
-import Link from "next/link";
-import { ItemCard, Shell } from "@/components/ui";
+import { AppFrame } from "@/components/AppFrame";
+import { AllList } from "@/components/AllList";
+import { subjectsFromItems, type FilterStatus } from "@/lib/filters";
 import { supabaseAdmin, type ItemRow } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
+function statusFromParams(params: { status?: string; filter?: string }): FilterStatus {
+  const value = params.status || params.filter;
+  if (value === "unread" || value === "read") {
+    return value;
+  }
+  return null;
+}
+
 export default async function AllPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string }>;
+  searchParams: Promise<{ status?: string; filter?: string }>;
 }) {
-  const { filter } = await searchParams;
+  const params = await searchParams;
   const db = supabaseAdmin();
-  let query = db
+  const { data, error } = await db
     .from("items")
     .select(
       "id, url, title, snapshot, subject, topics, keywords, created_at, read_at, similar_to_item_id, ingest_status",
     )
     .eq("ingest_status", "ready")
     .order("created_at", { ascending: false });
-  if (filter === "unread") {
-    query = query.is("read_at", null);
-  } else if (filter === "read") {
-    query = query.not("read_at", "is", null);
-  }
-  const { data, error } = await query;
   if (error) {
     throw new Error(error.message);
   }
   const items = (data || []) as ItemRow[];
+  const subjects = subjectsFromItems(items).map((row) => row.name);
   return (
-    <Shell current="/all">
-      <nav className="filter-row" aria-label="Library filters">
-        <Link href="/all" aria-current={!filter ? "page" : undefined}>
-          All
-        </Link>
-        <Link href="/all?filter=unread" aria-current={filter === "unread" ? "page" : undefined}>
-          Unread
-        </Link>
-        <Link href="/all?filter=read" aria-current={filter === "read" ? "page" : undefined}>
-          Read
-        </Link>
-      </nav>
-      {items.length === 0 ? (
-        <p className="empty">Nothing saved yet.</p>
-      ) : (
-        items.map((item) => <ItemCard key={item.id} item={item} />)
-      )}
-    </Shell>
+    <AppFrame
+      current="/all"
+      showSidebar
+      facetItems={items}
+      initialStatus={statusFromParams(params)}
+    >
+      <AllList items={items} subjects={subjects} />
+    </AppFrame>
   );
 }

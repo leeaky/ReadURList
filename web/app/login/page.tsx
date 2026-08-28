@@ -9,16 +9,18 @@ export default async function LoginPage({
 }) {
   const params = await searchParams;
   return (
-    <main className="page">
+    <main className="login-page">
       <Brand tagline="Personal corpus — sign in." />
       <form className="login-form" action={login}>
         <input type="hidden" name="next" value={params.next || "/"} />
         <label>
           Password
-          <input type="password" name="password" autoFocus required />
+          <input className="input" type="password" name="password" autoFocus required />
         </label>
         {params.error ? <p className="error">Wrong password.</p> : null}
-        <button type="submit">Enter</button>
+        <button type="submit" className="btn btn-primary">
+          Enter
+        </button>
       </form>
       <p className="empty">
         <Link href="/">Home</Link>

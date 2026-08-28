@@ -1,5 +1,7 @@
-import { ItemCard, Shell } from "@/components/ui";
+import { AppFrame } from "@/components/AppFrame";
+import { TodayList } from "@/components/TodayList";
 import { isReadyItem } from "@/lib/item-edit";
+import { subjectsFromItems } from "@/lib/filters";
 import { RANKING_TODAY_BLURB } from "@/lib/ranking-copy";
 import { supabaseAdmin, type DailyPickRow, type ItemRow } from "@/lib/supabase";
 
@@ -12,12 +14,20 @@ function asItem(value: DailyPickRow["items"]): ItemRow | null {
 
 export default async function TodayPage() {
   const db = supabaseAdmin();
-  const latest = await db
+  const latestPromise = db
     .from("daily_picks")
     .select("run_on")
     .order("run_on", { ascending: false })
     .limit(1)
     .maybeSingle();
+  const readyPromise = db
+    .from("items")
+    .select("subject, topics")
+    .eq("ingest_status", "ready");
+  const [latest, ready] = await Promise.all([latestPromise, readyPromise]);
+  if (ready.error) {
+    throw new Error(ready.error.message);
+  }
   const runOn = latest.data?.run_on;
   let picks: { item: ItemRow; reason: string; rank: number }[] = [];
   if (runOn) {
@@ -40,33 +50,14 @@ export default async function TodayPage() {
       .filter((row): row is { item: ItemRow; reason: string; rank: number } => row !== null);
   }
 
-  const path = await db
-    .from("items")
-    .select(
-      "id, url, title, snapshot, subject, topics, keywords, created_at, read_at, similar_to_item_id, ingest_status",
-    )
-    .eq("ingest_status", "ready")
-    .not("read_at", "is", null)
-    .order("read_at", { ascending: false })
-    .limit(10);
+  const facetItems = (ready.data || []) as Array<{ subject: string; topics: string[] | null }>;
+  const subjects = subjectsFromItems(facetItems).map((row) => row.name);
 
   return (
-    <Shell current="/">
-      <h2 className="section-title">Today</h2>
-      <p className="empty">{RANKING_TODAY_BLURB}</p>
-      {picks.length === 0 ? (
-        <p className="empty">No ranked picks yet. Run the daily job on the NUC (`second-read-digest` or /digest).</p>
-      ) : (
-        picks.map((p) => (
-          <ItemCard key={p.item.id} item={p.item} reason={p.reason} rank={p.rank} />
-        ))
-      )}
-      <h2 className="section-title">Path</h2>
-      {(path.data || []).length === 0 ? (
-        <p className="empty">Nothing marked read yet.</p>
-      ) : (
-        (path.data as ItemRow[]).map((item) => <ItemCard key={item.id} item={item} />)
-      )}
-    </Shell>
+    <AppFrame current="/" showSidebar facetItems={facetItems}>
+      <h1 className="page-title">Today</h1>
+      <p className="page-blurb text-muted">{RANKING_TODAY_BLURB}</p>
+      <TodayList picks={picks} subjects={subjects} />
+    </AppFrame>
   );
 }

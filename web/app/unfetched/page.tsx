@@ -1,7 +1,6 @@
-import { UnfetchedCard } from "@/components/UnfetchedCard";
-import { Shell } from "@/components/ui";
+import { AppFrame } from "@/components/AppFrame";
+import { UnfetchedList } from "@/components/UnfetchedList";
 import { supabaseAdmin, type ItemRow } from "@/lib/supabase";
-import { partitionUnfetched } from "@/lib/unfetched";
 
 export const dynamic = "force-dynamic";
 
@@ -18,33 +17,12 @@ export default async function UnfetchedPage() {
     throw new Error(error.message);
   }
   const items = (data || []) as ItemRow[];
-  const { needsText, saved } = partitionUnfetched(items);
 
   return (
-    <Shell current="/unfetched">
-      <h2 className="section-title">Unfetched</h2>
-      {items.length === 0 ? (
-        <p className="empty">No items waiting for article text.</p>
-      ) : (
-        <>
-          {needsText.length > 0 ? (
-            <section>
-              <h3 className="section-title">Needs article text</h3>
-              {needsText.map((item) => (
-                <UnfetchedCard key={item.id} item={item} />
-              ))}
-            </section>
-          ) : null}
-          {saved.length > 0 ? (
-            <section>
-              <h3 className="section-title">Saved for today’s fill-in</h3>
-              {saved.map((item) => (
-                <UnfetchedCard key={item.id} item={item} />
-              ))}
-            </section>
-          ) : null}
-        </>
-      )}
-    </Shell>
+    <AppFrame current="/unfetched" showSidebar={false} facetItems={[]}>
+      <h1 className="page-title">Unfetched</h1>
+      <p className="page-blurb text-muted">Links saved from Telegram, waiting for a summary.</p>
+      <UnfetchedList items={items} />
+    </AppFrame>
   );
 }

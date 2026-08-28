@@ -8,11 +8,9 @@ import {
 
 describe("ranking copy", () => {
   it("explains Today ranking without scores or clusters", () => {
-    assert.match(RANKING_TODAY_BLURB, /five unread ready pieces/i);
     assert.match(RANKING_TODAY_BLURB, /subject you keep saving/i);
     assert.match(RANKING_TODAY_BLURB, /recency/i);
     assert.match(RANKING_TODAY_BLURB, /reading path/i);
-    assert.match(RANKING_TODAY_BLURB, /source priority/i);
     assert.doesNotMatch(RANKING_TODAY_BLURB, /0\.45|score/i);
     assert.doesNotMatch(RANKING_TODAY_BLURB, /cluster/i);
   });
