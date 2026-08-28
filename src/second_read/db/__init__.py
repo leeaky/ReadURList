@@ -72,34 +72,6 @@ class Item(Base):
     )
 
 
-class Cluster(Base):
-    __tablename__ = "clusters"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    label: Mapped[str] = mapped_column(String(256))
-    computed_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-
-    members: Mapped[list["ClusterItem"]] = relationship(
-        back_populates="cluster", cascade="all, delete-orphan"
-    )
-
-
-class ClusterItem(Base):
-    __tablename__ = "cluster_items"
-
-    cluster_id: Mapped[int] = mapped_column(
-        ForeignKey("clusters.id", ondelete="CASCADE"), primary_key=True
-    )
-    item_id: Mapped[int] = mapped_column(
-        ForeignKey("items.id", ondelete="CASCADE"), primary_key=True
-    )
-
-    cluster: Mapped[Cluster] = relationship(back_populates="members")
-    item: Mapped[Item] = relationship()
-
-
 class DailyPick(Base):
     __tablename__ = "daily_picks"
     __table_args__ = (UniqueConstraint("run_on", "item_id", name="uq_daily_picks_run_item"),)
