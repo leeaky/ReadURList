@@ -2,7 +2,7 @@ export type OrganizeItem = {
   id: number;
   subject: string;
   topics: string[];
-  ingest_status?: string;
+  ingest_status: string;
 };
 
 const DASHES = /[\u2010\u2011\u2012\u2013\u2014\u2015\u2212\ufe58\ufe63\uff0d]/g;

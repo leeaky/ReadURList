@@ -39,7 +39,7 @@ function asOrganize(
     id: row.id,
     subject: row.subject,
     topics: row.topics ?? [],
-    ingest_status: row.ingest_status,
+    ingest_status: row.ingest_status ?? "",
   }));
 }
 
