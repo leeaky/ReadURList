@@ -49,6 +49,7 @@ function toggleIn(list: string[], value: string): string[] {
 const TABS = [
   ["/", "Today"],
   ["/all", "All"],
+  ["/organize", "Organize"],
   ["/unfetched", "Unfetched"],
 ] as const;
 
