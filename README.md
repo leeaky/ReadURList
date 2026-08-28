@@ -105,9 +105,9 @@ npm run dev
 
 `web/.env.local` usually points at the **same Supabase project as production**. Mark read is fine. Do not use **Send to Unfetched** (or other destructive UI) from localhost against that database — it clears article text and fill-in for real items.
 
-Views: Today (ranked picks, ranking explainer, pick ranks 1–5, reading path), Unread (optional stale 14+ days), **Unfetched** (stubs awaiting article text), Topics, Clusters, All. Mark read/unread on every card.
+Views: Today (ranked picks, ranking explainer, pick ranks 1–5, reading path), Unread (optional stale 14+ days), **Unfetched** (stubs awaiting article text), Topics, All. Mark read/unread on every card.
 
-**Unfetched:** lists items the worker could not retrieve. Open **Paste article**, paste text or upload a PDF (max 3.5 MB — Vercel serverless limit). Saved text is ingested on the NUC at the next daily digest (or when you run `/digest` / `second-read-digest`). Stubs are hidden from Today, Unread, Topics, Clusters, and All until ingest completes.
+**Unfetched:** lists items the worker could not retrieve. Open **Paste article**, paste text or upload a PDF (max 3.5 MB — Vercel serverless limit). Saved text is ingested on the NUC at the next daily digest (or when you run `/digest` / `second-read-digest`). Stubs are hidden from Today, Unread, Topics, and All until ingest completes.
 
 ## Backup
 

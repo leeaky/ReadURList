@@ -8,10 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Clusters browse is gone. Topics (by subject) is the grouping; ranking no longer uses cluster centrality (weights 0.45 / 0.20 / 0.20 / 0.15).
 - Groq JSON calls use structured outputs, cap completion tokens to the 8000 TPM window, and consolidate from unique labels so the daily remap fits on-demand Groq.
 - Ingest reuses existing ready subjects/topics; the daily job consolidates near-duplicate tags when unique subjects are more than half of ready items.
 - Ranking clusters on subject + topics; keywords are only for near-duplicate detection.
-- Today explains ranking and shows pick rank; Topics, Clusters, and Unread say how they relate.
+- Today explains ranking and shows pick rank; Topics and Unread say how they relate.
 - Edit can send a completed item back to Unfetched (clears the body, queues Groq fill-in).
 - Product center from claim-connection pings to **capture → snapshot → daily ranked reads**.
 - Ingest output is a 2–4 sentence snapshot plus subject, topics, keywords, and priority.
@@ -24,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fetch/extract failures save `pending_body` stubs; Unfetched page for paste/PDF; daily NUC Groq fill-in before digest.
 - Multi-URL paste in Telegram (sequential `n/N` snapshots).
 - Daily cluster + ranking job, `daily_picks`, Telegram digest with Mark read buttons (`/digest` to run now).
-- Next.js website (`web/`) on Vercel: Today, Unread, Topics, Clusters, All, Unfetched, reading path, password gate, mark read.
+- Next.js website (`web/`) on Vercel: Today, Unread, Topics, All, Unfetched, reading path, password gate, mark read.
 - SQLite → Postgres migrate script; pytest suite and GitHub Action.
 
 ### Removed
