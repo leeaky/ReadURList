@@ -11,6 +11,7 @@ import {
   filterItems,
   subjectsFromItems,
   tagsFromItems,
+  uniqueTopics,
 } from "@/lib/filters";
 import type { ItemRow } from "@/lib/supabase";
 
@@ -36,7 +37,7 @@ export function OrganizeView({ items }: { items: ItemRow[] }) {
   );
 
   const subjects = subjectsFromItems(items);
-  const tags = tagsFromItems(items, Number.MAX_SAFE_INTEGER);
+  const tags = tagsFromItems(items);
 
   const visible = useMemo(
     () =>
@@ -263,7 +264,7 @@ export function OrganizeView({ items }: { items: ItemRow[] }) {
             <div className="article-list">
               {visible.map((item) => {
                 const checked = selected.has(item.id);
-                const topics = item.topics ?? [];
+                const topics = uniqueTopics(item.topics);
                 return (
                   <label
                     key={item.id}

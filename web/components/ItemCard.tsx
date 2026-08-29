@@ -9,6 +9,7 @@ import {
   type UpdateItemMetadataState,
 } from "@/app/actions";
 import { parseTopicList } from "@/lib/item-edit";
+import { uniqueTopics } from "@/lib/filters";
 import type { ItemRow } from "@/lib/supabase";
 
 function formatDate(iso: string | null) {
@@ -31,7 +32,7 @@ export function ItemCard({
 }) {
   const read = Boolean(item.read_at);
   const toggle = setReadState.bind(null, item.id, !read);
-  const topics = item.topics ?? [];
+  const topics = uniqueTopics(item.topics);
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [confirmingSend, setConfirmingSend] = useState(false);
@@ -63,7 +64,7 @@ export function ItemCard({
 
   function startEdit() {
     setDraftSubject(item.subject);
-    setDraftTopics(item.topics ?? []);
+    setDraftTopics(uniqueTopics(item.topics));
     setTagInput("");
     setConfirmingSend(false);
     setEditing(true);

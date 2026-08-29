@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Groq chat retries on 429/5xx during bulk ingest.
 - Unfetched splits needs-text vs saved-for-fill-in; paste form closes on save; stubs can be deleted after confirm.
 - Corpus cards can overwrite headline, description, subject, and topics when ingest captured the wrong page.
+- Today’s topic/tag sidebar lists only that day’s picks. All and Organize show the full tag list (no 18-tag cap). Duplicate tags on one article are collapsed.
 
 ### Added
 - Fetch/extract failures save `pending_body` stubs; Unfetched page for paste/PDF; daily NUC Groq fill-in before digest.

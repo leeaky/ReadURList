@@ -20,6 +20,7 @@ import {
   remapGuard,
   remapSubjects,
   remapTopics,
+  withUniqueTopics,
   type OrganizeItem,
 } from "@/lib/organize";
 import { supabaseAdmin, type ItemRow } from "@/lib/supabase";
@@ -318,10 +319,11 @@ export async function remapVocabulary(
   if (!loaded.ok) {
     return loaded;
   }
+  const cleaned = withUniqueTopics(loaded.items);
   const next =
     kind === "subject"
-      ? remapSubjects(loaded.items, from, parsed.label)
-      : remapTopics(loaded.items, from, parsed.label);
+      ? remapSubjects(cleaned, from, parsed.label)
+      : remapTopics(cleaned, from, parsed.label);
   const changed = changedRows(loaded.items, next);
   const persistError = await persistOrganizeRows(supabaseAdmin(), changed);
   if (persistError) {
@@ -345,7 +347,8 @@ export async function bulkOrganize(
   if (!loaded.ok) {
     return loaded;
   }
-  const byId = new Map(loaded.items.map((item) => [item.id, item]));
+  const cleaned = withUniqueTopics(loaded.items);
+  const byId = new Map(cleaned.map((item) => [item.id, item]));
   for (const id of ids.ids) {
     const blocked = itemEditGuard(byId.get(id) ?? null);
     if (blocked) {
@@ -353,13 +356,13 @@ export async function bulkOrganize(
     }
   }
 
-  let next = loaded.items;
+  let next = cleaned;
   if (op === "set-subject") {
     const parsed = parseTargetLabel(String(formData.get("subject") || ""));
     if (!parsed.ok) {
       return parsed;
     }
-    next = bulkSetSubject(loaded.items, ids.ids, parsed.label);
+    next = bulkSetSubject(cleaned, ids.ids, parsed.label);
   } else if (op === "add-topics" || op === "remove-topics") {
     const tags = parseTopicList(String(formData.get("topics") || ""));
     if (tags.length === 0) {
@@ -367,8 +370,8 @@ export async function bulkOrganize(
     }
     next =
       op === "add-topics"
-        ? bulkAddTopics(loaded.items, ids.ids, tags)
-        : bulkRemoveTopics(loaded.items, ids.ids, tags);
+        ? bulkAddTopics(cleaned, ids.ids, tags)
+        : bulkRemoveTopics(cleaned, ids.ids, tags);
   } else {
     return { ok: false, error: "Choose an action." };
   }

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from second_read.llm.base import LLMProvider
 from second_read.prompts import INGEST_SCHEMA, INGEST_SYSTEM
-from second_read.tags.normalize import canonicalize_label
+from second_read.tags.normalize import canonicalize_label, unique_labels
 
 
 @dataclass
@@ -76,11 +76,13 @@ def summarize_article(
     priority_int = min(max(priority_int, 1), 5)
     snapshot = (data.get("snapshot") or "").strip()
     subject = canonicalize_label(data.get("subject") or "", subjects)
-    topics = [
-        canonicalize_label(t, topics_v)
-        for t in _clip_list(data.get("topics"), cap=8)
-        if canonicalize_label(t, topics_v)
-    ]
+    topics = unique_labels(
+        [
+            canonicalize_label(t, topics_v)
+            for t in _clip_list(data.get("topics"), cap=8)
+            if canonicalize_label(t, topics_v)
+        ]
+    )
     return IngestResult(
         title=(data.get("title") or title_hint).strip() or title_hint,
         snapshot=snapshot,

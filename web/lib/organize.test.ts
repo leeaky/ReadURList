@@ -12,6 +12,7 @@ import {
   remapGuard,
   remapSubjects,
   remapTopics,
+  withUniqueTopics,
   type OrganizeItem,
 } from "./organize.ts";
 
@@ -123,6 +124,17 @@ describe("remapTopics", () => {
   });
 });
 
+describe("withUniqueTopics", () => {
+  it("collapses duplicate tags on every item", () => {
+    const items = [
+      row({ id: 1, topics: ["a", "a", "b"] }),
+      row({ id: 2, topics: ["c"] }),
+    ];
+    assert.deepEqual(withUniqueTopics(items)[0].topics, ["a", "b"]);
+    assert.deepEqual(withUniqueTopics(items)[1].topics, ["c"]);
+  });
+});
+
 describe("bulkSetSubject", () => {
   it("sets subject only on selected ids", () => {
     const items = [
@@ -136,6 +148,17 @@ describe("bulkSetSubject", () => {
 });
 
 describe("bulkAddTopics", () => {
+  it("collapses duplicate tags already on an item", () => {
+    const items = [
+      row({
+        id: 1,
+        topics: ["financial markets", "llm", "financial markets"],
+      }),
+    ];
+    const next = bulkAddTopics(items, [1], []);
+    assert.deepEqual(next[0].topics, ["financial markets", "llm"]);
+  });
+
   it("adds tags to selected items, dedupes, and caps at 8", () => {
     const items = [
       row({ id: 1, topics: ["cli"] }),

@@ -32,3 +32,22 @@ def test_summarize_canonicalizes_subject_to_existing_spelling():
     assert "Existing subjects" in llm.prompt
     assert "Claude Code" in llm.prompt
     assert "reuse an existing subject" in llm.system.lower()
+
+
+def test_summarize_dedupes_repeated_topics():
+    class DupLLM:
+        def complete(self, prompt, *, model, system=None, schema=None, temperature=0.3) -> str:
+            return (
+                '{"title": "T", "snapshot": "Snap.", "subject": "finance",'
+                ' "topics": ["financial markets", "llm", "financial markets"],'
+                ' "keywords": ["X"], "priority": 4}'
+            )
+
+    result = summarize_article(
+        DupLLM(),  # type: ignore[arg-type]
+        model="x",
+        url="https://example.com",
+        title_hint="Hint",
+        text="Body " * 20,
+    )
+    assert result.topics == ["financial markets", "llm"]

@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  facetItemsFromPicks,
   filterItems,
   itemMatchesFilter,
   subjectsFromItems,
   tagsFromItems,
+  uniqueTopics,
   type FilterState,
   type FilterableItem,
 } from "./filters.ts";
@@ -118,7 +120,7 @@ describe("subjectsFromItems", () => {
 });
 
 describe("tagsFromItems", () => {
-  it("counts topics by frequency, caps at 18, and sorts by count then name", () => {
+  it("counts topics by frequency and sorts by count then name", () => {
     const items = [
       item({ title: "1", topics: ["cli", "open source"] }),
       item({ title: "2", topics: ["cli"] }),
@@ -133,5 +135,51 @@ describe("tagsFromItems", () => {
       tagsFromItems(items).map((row) => row.tag),
       ["cli", "open source", "ux"],
     );
+  });
+
+  it("returns every tag when there are more than 18", () => {
+    const items = Array.from({ length: 20 }, (_, i) =>
+      item({ title: String(i), topics: [`tag-${String(i).padStart(2, "0")}`] }),
+    );
+    assert.equal(tagsFromItems(items).length, 20);
+  });
+
+  it("counts a repeated tag on one article once", () => {
+    const items = [
+      item({
+        title: "Kronos",
+        topics: ["financial markets", "llm", "financial markets"],
+      }),
+    ];
+    assert.deepEqual(tagsFromItems(items), [
+      { tag: "financial markets", count: 1 },
+      { tag: "llm", count: 1 },
+    ]);
+  });
+});
+
+describe("uniqueTopics", () => {
+  it("keeps first spelling and drops later duplicates", () => {
+    assert.deepEqual(
+      uniqueTopics(["macroeconomics", "debt cycles", "Macroeconomics", ""]),
+      ["macroeconomics", "debt cycles"],
+    );
+  });
+});
+
+describe("facetItemsFromPicks", () => {
+  it("builds Today facets from ranked picks, not the rest of the corpus", () => {
+    const pick = item({ title: "Pick", subject: "AI", topics: ["cli"] });
+    const other = item({ title: "Other", subject: "Health", topics: ["health"] });
+    const facets = facetItemsFromPicks([{ item: pick }]);
+    assert.deepEqual(
+      subjectsFromItems(facets).map((row) => row.name),
+      ["AI"],
+    );
+    assert.deepEqual(
+      tagsFromItems(facets).map((row) => row.tag),
+      ["cli"],
+    );
+    assert.equal(subjectsFromItems([pick, other]).some((row) => row.name === "Health"), true);
   });
 });

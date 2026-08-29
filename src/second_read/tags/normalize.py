@@ -15,6 +15,21 @@ def _fold(raw: str) -> str:
     return _WS.sub(" ", text).strip()
 
 
+def unique_labels(labels: Sequence[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for raw in labels:
+        label = raw.strip() if isinstance(raw, str) else ""
+        if not label:
+            continue
+        key = label.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(label)
+    return out
+
+
 def canonicalize_label(raw: str, existing: Sequence[str]) -> str:
     folded = _fold(raw if isinstance(raw, str) else "")
     if not folded:

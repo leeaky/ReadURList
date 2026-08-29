@@ -99,3 +99,29 @@ def test_apply_tag_maps_merges_subjects_and_topics_leaves_keywords(tmp_path):
         assert rows[stub_id].keywords == ["stub"]
     finally:
         session.close()
+
+
+def test_apply_tag_maps_dedupes_repeated_topics(tmp_path):
+    init_db(f"sqlite:///{tmp_path / 't.db'}")
+    session = get_session()
+    try:
+        session.add(
+            _ready(
+                "https://a.example/1",
+                "finance",
+                ["financial markets", "llm", "financial markets"],
+            )
+        )
+        session.commit()
+        item_id = session.query(Item).one().id
+    finally:
+        session.close()
+
+    apply_tag_maps(subject_maps={}, topic_maps={})
+    session = get_session()
+    try:
+        row = session.get(Item, item_id)
+        assert row is not None
+        assert row.topics == ["financial markets", "llm"]
+    finally:
+        session.close()

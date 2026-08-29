@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from second_read.db import Item, get_session
-from second_read.tags.normalize import canonicalize_label
+from second_read.tags.normalize import canonicalize_label, unique_labels
 
 
 @dataclass
@@ -77,9 +77,13 @@ def apply_tag_maps(*, subject_maps: dict[str, str], topic_maps: dict[str, str]) 
             topics_existing.extend(r.topics or [])
         for row in rows:
             row.subject = canonicalize_label(row.subject or "", subjects)
-            row.topics = [
-                canonicalize_label(t, topics_existing) for t in (row.topics or []) if t
-            ]
+            row.topics = unique_labels(
+                [
+                    canonicalize_label(t, topics_existing)
+                    for t in (row.topics or [])
+                    if t
+                ]
+            )
         session.commit()
         return changed
     except Exception:
