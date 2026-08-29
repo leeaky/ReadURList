@@ -341,11 +341,13 @@ textarea.input {
   max-width: 1400px;
   margin: 0 auto;
   align-items: flex-start;
+  flex-wrap: wrap;
 }
 
 .sidebar {
-  width: 230px;
-  flex: none;
+  flex: 1 1 280px;
+  width: 320px;
+  max-width: 380px;
   position: sticky;
   top: var(--space-6);
   max-height: calc(100dvh - var(--space-6) * 2);
@@ -378,9 +380,7 @@ textarea.input {
   flex-direction: column;
   gap: 2px;
   margin-bottom: var(--space-6);
-  overflow-y: auto;
-  min-height: 0;
-  flex: 1 1 auto;
+  flex: none;
 }
 
 .topic-row {
@@ -420,12 +420,14 @@ textarea.input {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  flex: none;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .main-col {
-  flex: 1;
-  min-width: 0;
+  flex: 2 1 22rem;
+  min-width: 22rem;
   width: 100%;
   max-width: 100%;
 }
@@ -464,7 +466,7 @@ textarea.input {
   padding: var(--space-4);
   margin-bottom: clamp(var(--space-3), 1.2vw, var(--space-4));
   border-radius: var(--radius-md);
-  min-width: 0;
+  min-width: min(100%, 22rem);
   max-width: 100%;
   overflow: hidden;
 }
@@ -929,6 +931,11 @@ section + section .section-title {
     overflow-y: auto;
   }
 
+  .tag-cloud {
+    flex: none;
+    overflow: visible;
+  }
+
   .topic-row,
   .tag-button {
     min-height: 44px;
@@ -938,10 +945,16 @@ section + section .section-title {
     padding: 8px 10px;
   }
 
+  .article-card {
+    min-width: 0;
+  }
+
   .main-col,
   .sidebar {
     width: 100%;
     max-width: none;
+    min-width: 0;
+    flex: none;
   }
 
   .organize-layout {

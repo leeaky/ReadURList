@@ -107,3 +107,20 @@ export function facetItemsFromPicks<T extends { subject: string; topics: string[
 ): T[] {
   return picks.map((pick) => pick.item);
 }
+
+export function itemsMatchingSubjects<T extends { subject: string }>(
+  items: T[],
+  selectedSubjects: string[],
+): T[] {
+  if (selectedSubjects.length === 0) {
+    return items;
+  }
+  return items.filter((item) => selectedSubjects.includes(item.subject));
+}
+
+export function tagsInSelectedSubjects(
+  items: Array<{ subject: string; topics: string[] | null }>,
+  selectedSubjects: string[],
+): { tag: string; count: number }[] {
+  return tagsFromItems(itemsMatchingSubjects(items, selectedSubjects));
+}

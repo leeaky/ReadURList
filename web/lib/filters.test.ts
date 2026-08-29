@@ -4,8 +4,10 @@ import {
   facetItemsFromPicks,
   filterItems,
   itemMatchesFilter,
+  itemsMatchingSubjects,
   subjectsFromItems,
   tagsFromItems,
+  tagsInSelectedSubjects,
   uniqueTopics,
   type FilterState,
   type FilterableItem,
@@ -181,5 +183,52 @@ describe("facetItemsFromPicks", () => {
       ["cli"],
     );
     assert.equal(subjectsFromItems([pick, other]).some((row) => row.name === "Health"), true);
+  });
+});
+
+describe("itemsMatchingSubjects", () => {
+  it("returns every item when no topic is selected", () => {
+    const items = [
+      item({ title: "A", subject: "finance", topics: ["markets"] }),
+      item({ title: "B", subject: "health", topics: ["diet"] }),
+    ];
+    assert.equal(itemsMatchingSubjects(items, []).length, 2);
+  });
+
+  it("keeps items whose subject is in the selection", () => {
+    const items = [
+      item({ title: "A", subject: "finance", topics: ["markets"] }),
+      item({ title: "B", subject: "health", topics: ["diet"] }),
+      item({ title: "C", subject: "finance", topics: ["debt"] }),
+    ];
+    assert.deepEqual(
+      itemsMatchingSubjects(items, ["finance"]).map((row) => row.title),
+      ["A", "C"],
+    );
+  });
+});
+
+describe("tagsInSelectedSubjects", () => {
+  it("lists only tags on articles in the selected topic, with in-topic counts", () => {
+    const items = [
+      item({ title: "A", subject: "finance", topics: ["markets", "debt"] }),
+      item({ title: "B", subject: "health", topics: ["diet", "markets"] }),
+      item({ title: "C", subject: "finance", topics: ["markets"] }),
+    ];
+    assert.deepEqual(tagsInSelectedSubjects(items, ["finance"]), [
+      { tag: "markets", count: 2 },
+      { tag: "debt", count: 1 },
+    ]);
+  });
+
+  it("lists every tag when no topic is selected", () => {
+    const items = [
+      item({ title: "A", subject: "finance", topics: ["markets"] }),
+      item({ title: "B", subject: "health", topics: ["diet"] }),
+    ];
+    assert.deepEqual(
+      tagsInSelectedSubjects(items, []).map((row) => row.tag),
+      ["diet", "markets"],
+    );
   });
 });

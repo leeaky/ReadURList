@@ -6,13 +6,14 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
 import {
   subjectsFromItems,
-  tagsFromItems,
+  tagsInSelectedSubjects,
   type FilterStatus,
 } from "@/lib/filters";
 import { ThemeToggle } from "./ThemeToggle";
@@ -119,7 +120,18 @@ export function AppFrame({
 
   const [filtersOpen, setFiltersOpen] = useState(false);
   const subjects = subjectsFromItems(facetItems);
-  const tags = tagsFromItems(facetItems);
+  const tags = useMemo(
+    () => tagsInSelectedSubjects(facetItems, selectedSubjects),
+    [facetItems, selectedSubjects],
+  );
+
+  useEffect(() => {
+    const allowed = new Set(tags.map((row) => row.tag));
+    setSelectedTags((current) => {
+      const next = current.filter((tag) => allowed.has(tag));
+      return next.length === current.length ? current : next;
+    });
+  }, [tags]);
   const facetCount =
     selectedSubjects.length + selectedTags.length + (status != null ? 1 : 0);
 
