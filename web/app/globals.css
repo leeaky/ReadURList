@@ -114,6 +114,13 @@ a {
   line-height: 1.2;
 }
 
+a.btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -434,9 +441,17 @@ textarea.input {
 
 .page-heading {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.page-heading-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: none;
 }
 
 .page-title {
@@ -979,6 +994,7 @@ section + section .section-title {
     min-height: 44px;
   }
 
+  .page-heading-meta .btn,
   .organize-bulk .btn,
   .organize-merge .btn {
     min-height: 44px;

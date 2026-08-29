@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useMemo, useState } from "react";
 import {
   bulkOrganize,
@@ -239,10 +240,15 @@ export function OrganizeView({ items }: { items: ItemRow[] }) {
       <div className="organize-main">
         <div className="page-heading">
           <h1 className="page-title">Organize</h1>
-          <span className="article-count text-muted">
-            {visible.length} articles
-            {selectedIds.length > 0 ? ` · ${selectedIds.length} selected` : ""}
-          </span>
+          <div className="page-heading-meta">
+            <span className="article-count text-muted">
+              {visible.length} articles
+              {selectedIds.length > 0 ? ` · ${selectedIds.length} selected` : ""}
+            </span>
+            <Link href="/all" className="btn btn-secondary">
+              Done
+            </Link>
+          </div>
         </div>
         <p className="page-blurb text-muted">
           Rename or merge labels on the left. Select articles to set a Topic or
