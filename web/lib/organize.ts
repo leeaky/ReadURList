@@ -1,5 +1,3 @@
-import { uniqueTopics } from "./filters.ts";
-
 export type OrganizeItem = {
   id: number;
   subject: string;
@@ -84,7 +82,19 @@ function existingTopicsExcept(items: OrganizeItem[], from: string): string[] {
 }
 
 export function withUniqueTopics(items: OrganizeItem[]): OrganizeItem[] {
-  return items.map((item) => ({ ...item, topics: uniqueTopics(item.topics) }));
+  return items.map((item) => {
+    const seen = new Set<string>();
+    const topics: string[] = [];
+    for (const tag of item.topics) {
+      const name = tag.trim();
+      if (!name) continue;
+      const key = name.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      topics.push(name);
+    }
+    return { ...item, topics };
+  });
 }
 
 export function remapSubjects(
