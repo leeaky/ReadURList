@@ -351,10 +351,14 @@ textarea.input {
   flex-wrap: wrap;
 }
 
-.sidebar {
+.sidebar,
+.organize-vocab {
   flex: 1 1 280px;
   width: 320px;
   max-width: 380px;
+}
+
+.sidebar {
   position: sticky;
   top: var(--space-6);
   max-height: calc(100dvh - var(--space-6) * 2);
@@ -462,7 +466,7 @@ textarea.input {
 
 .page-blurb {
   font-size: 14px;
-  max-width: 620px;
+  max-width: 100%;
   margin: var(--space-2) 0 0;
 }
 
@@ -704,11 +708,10 @@ section + section .section-title {
   display: flex;
   gap: var(--space-6);
   align-items: flex-start;
+  flex-wrap: wrap;
 }
 
 .organize-vocab {
-  width: 260px;
-  flex: none;
   position: sticky;
   top: var(--space-6);
   max-height: calc(100dvh - var(--space-6) * 2);
@@ -741,8 +744,8 @@ section + section .section-title {
 }
 
 .organize-main {
-  flex: 1;
-  min-width: 0;
+  flex: 2 1 22rem;
+  min-width: 22rem;
 }
 
 .organize-select-all {
@@ -965,7 +968,9 @@ section + section .section-title {
   }
 
   .main-col,
-  .sidebar {
+  .sidebar,
+  .organize-main,
+  .organize-vocab {
     width: 100%;
     max-width: none;
     min-width: 0;
