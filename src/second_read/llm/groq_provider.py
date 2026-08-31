@@ -22,17 +22,86 @@ _LLM_BACKOFF_SEC = 1.5
 _GROQ_TPM_LIMIT = 8000
 _MIN_COMPLETION_TOKENS = 256
 _TPM_MARGIN = 256
+_CHARS_PER_TOKEN = 3  # denser than chars/4; json_schema + academic PDF undercount
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 
 
 def _estimate_tokens(*parts: str) -> int:
-    return max(1, sum(len(part) for part in parts) // 4)
+    return max(1, sum(len(part or "") for part in parts) // _CHARS_PER_TOKEN)
+
+
+def _schema_json(kwargs: dict[str, Any]) -> str:
+    fmt = kwargs.get("response_format")
+    return json.dumps(fmt) if fmt else ""
 
 
 def _completion_budget(prompt_tokens: int) -> int:
     room = _GROQ_TPM_LIMIT - prompt_tokens - _TPM_MARGIN
-    return max(_MIN_COMPLETION_TOKENS, room)
+    # Never floor at MIN if that would exceed TPM; truncation reserved MIN already.
+    return max(1, room)
+
+
+def _fit_messages_to_tpm(messages: list[dict[str, str]], schema_json: str) -> None:
+    """Truncate the user message so prompt + min completion + margin fit TPM."""
+    user_idx = next(
+        (i for i, m in enumerate(messages) if m["role"] == "user"),
+        None,
+    )
+    if user_idx is None:
+        return
+    others = [m["content"] for i, m in enumerate(messages) if i != user_idx]
+    reserved = (
+        _estimate_tokens(*others, schema_json)
+        + _MIN_COMPLETION_TOKENS
+        + _TPM_MARGIN
+    )
+    budget_chars = max(0, (_GROQ_TPM_LIMIT - reserved) * _CHARS_PER_TOKEN)
+    text = messages[user_idx]["content"]
+    if len(text) <= budget_chars:
+        return
+    clipped = text[:budget_chars]
+    if " " in clipped:
+        clipped = clipped.rsplit(" ", 1)[0]
+    messages[user_idx]["content"] = clipped
+
+
+def _shrink_user_message(messages: list[dict[str, str]], fraction: float = 0.75) -> None:
+    for message in reversed(messages):
+        if message["role"] != "user":
+            continue
+        text = message["content"]
+        keep = max(1, int(len(text) * fraction))
+        clipped = text[:keep]
+        if " " in clipped:
+            clipped = clipped.rsplit(" ", 1)[0]
+        message["content"] = clipped or text[:keep]
+        return
+
+
+def _apply_tpm_budget(kwargs: dict[str, Any]) -> None:
+    messages = kwargs["messages"]
+    schema_json = _schema_json(kwargs)
+    _fit_messages_to_tpm(messages, schema_json)
+    prompt_tokens = _estimate_tokens(
+        *(m["content"] for m in messages),
+        schema_json,
+    )
+    kwargs["max_completion_tokens"] = _completion_budget(prompt_tokens)
+
+
+def _tpm_request_too_large(exc: BaseException) -> bool:
+    status = getattr(exc, "status_code", None)
+    if status == 413:
+        return True
+    body = getattr(exc, "body", None)
+    if not isinstance(body, dict):
+        return False
+    err = body.get("error") if isinstance(body.get("error"), dict) else body
+    if not isinstance(err, dict):
+        return False
+    message = str(err.get("message") or "")
+    return err.get("type") == "tokens" or "Request too large" in message
 
 
 def _empty_json_validate(exc: BaseException) -> bool:
@@ -106,8 +175,7 @@ class GroqProvider(LLMProvider):
             messages.append({"role": "system", "content": system_text})
         messages.append({"role": "user", "content": user_prompt})
         kwargs["messages"] = messages
-        prompt_tokens = _estimate_tokens(*(m["content"] for m in messages))
-        kwargs["max_completion_tokens"] = _completion_budget(prompt_tokens)
+        _apply_tpm_budget(kwargs)
         if "gpt-oss" in model.lower():
             kwargs["reasoning_effort"] = "low"
 
@@ -122,14 +190,19 @@ class GroqProvider(LLMProvider):
                 return content
             except (RateLimitError, APIStatusError) as exc:
                 status = getattr(exc, "status_code", None)
+                last_exc = exc
+                too_large = _tpm_request_too_large(exc)
                 retryable = (
-                    isinstance(exc, RateLimitError)
+                    too_large
+                    or isinstance(exc, RateLimitError)
                     or status in {408, 429, 500, 502, 503, 504}
                     or _empty_json_validate(exc)
                 )
-                last_exc = exc
                 if not retryable or attempt == _MAX_LLM_ATTEMPTS:
                     raise
+                if too_large:
+                    _shrink_user_message(kwargs["messages"])
+                    _apply_tpm_budget(kwargs)
                 wait = _LLM_BACKOFF_SEC * (2 ** (attempt - 1))
                 logger.warning(
                     "Groq %s (attempt %s/%s); retry in %.1fs",
