@@ -9,7 +9,7 @@ export default async function UnfetchedPage() {
   const { data, error } = await db
     .from("items")
     .select(
-      "id, url, title, snapshot, subject, topics, keywords, created_at, read_at, similar_to_item_id, ingest_status, extracted_text, note",
+      "id, url, title, snapshot, subject, topics, keywords, created_at, read_at, ingest_status, extracted_text, note",
     )
     .eq("ingest_status", "pending_body")
     .order("created_at", { ascending: false });

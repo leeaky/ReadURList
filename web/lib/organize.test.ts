@@ -12,6 +12,8 @@ import {
   remapGuard,
   remapSubjects,
   remapTopics,
+  oldestUnreadQueue,
+  pinSingletonLabels,
   withUniqueTopics,
   type OrganizeItem,
 } from "./organize.ts";
@@ -210,5 +212,36 @@ describe("parseItemIds", () => {
     if (!result.ok) {
       assert.equal(result.error, "Select at least one article.");
     }
+  });
+});
+
+describe("oldestUnreadQueue", () => {
+  it("returns the oldest unskipped unread items", () => {
+    const items = [
+      { id: 3, created_at: "2026-09-03T00:00:00Z", read_at: null, skipped_at: null },
+      { id: 1, created_at: "2026-08-01T00:00:00Z", read_at: null, skipped_at: null },
+      { id: 2, created_at: "2026-08-02T00:00:00Z", read_at: "2026-08-03T00:00:00Z" },
+      { id: 4, created_at: "2026-07-01T00:00:00Z", skipped_at: "2026-07-02T00:00:00Z" },
+      { id: 5, created_at: "2026-08-10T00:00:00Z", read_at: null, skipped_at: null },
+    ];
+    assert.deepEqual(
+      oldestUnreadQueue(items, 2).map((item) => item.id),
+      [1, 5],
+    );
+  });
+});
+
+describe("pinSingletonLabels", () => {
+  it("puts count-1 labels first and keeps remaining order", () => {
+    const rows = [
+      { name: "common", count: 4 },
+      { name: "alone", count: 1 },
+      { name: "pair", count: 2 },
+      { name: "orphan", count: 1 },
+    ];
+    assert.deepEqual(
+      pinSingletonLabels(rows).map((row) => row.name),
+      ["alone", "orphan", "common", "pair"],
+    );
   });
 });

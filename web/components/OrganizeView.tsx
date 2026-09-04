@@ -5,6 +5,7 @@ import { useActionState, useEffect, useMemo, useState } from "react";
 import {
   bulkOrganize,
   remapVocabulary,
+  setSkipState,
   type OrganizeState,
 } from "@/app/actions";
 import { useFilters } from "./AppFrame";
@@ -14,6 +15,7 @@ import {
   tagsFromItems,
   uniqueTopics,
 } from "@/lib/filters";
+import { oldestUnreadQueue, pinSingletonLabels } from "@/lib/organize";
 import type { ItemRow } from "@/lib/supabase";
 
 const initialState: OrganizeState = { ok: true, saved: false, updated: 0 };
@@ -37,8 +39,9 @@ export function OrganizeView({ items }: { items: ItemRow[] }) {
     initialState,
   );
 
-  const subjects = subjectsFromItems(items);
-  const tags = tagsFromItems(items);
+  const subjects = pinSingletonLabels(subjectsFromItems(items));
+  const tags = pinSingletonLabels(tagsFromItems(items));
+  const oldestUnread = oldestUnreadQueue(items);
 
   const visible = useMemo(
     () =>
@@ -200,7 +203,7 @@ export function OrganizeView({ items }: { items: ItemRow[] }) {
               Click a Topic or Tag to rename or merge it across the corpus.
             </p>
           )}
-          <div className="sidebar-label">Topics</div>
+          <div className="sidebar-label">Topics · count 1 first</div>
           <div className="topic-list">
             {subjects.map((row) => (
               <button
@@ -215,7 +218,7 @@ export function OrganizeView({ items }: { items: ItemRow[] }) {
               </button>
             ))}
           </div>
-          <div className="sidebar-label">Tags</div>
+          <div className="sidebar-label">Tags · count 1 first</div>
           <div className="tag-cloud">
             {tags.map((row) => (
               <button
@@ -251,9 +254,36 @@ export function OrganizeView({ items }: { items: ItemRow[] }) {
           </div>
         </div>
         <p className="page-blurb text-muted">
-          Rename or merge labels on the left. Select articles to set a Topic or
-          add and remove Tags. Today’s ranking waits for the next daily job.
+          Rename or merge labels on the left. Count-1 Topics and Tags are listed
+          first so they are easy to merge. Select articles to set a Topic or add
+          and remove Tags. Today’s ranking waits for the next daily job.
         </p>
+
+        {oldestUnread.length > 0 ? (
+          <section className="oldest-unread" aria-label="Oldest unread">
+            <h2 className="sidebar-label">Oldest unread</h2>
+            <p className="page-blurb text-muted">
+              Oldest items still in the ranking queue. Skip or read them here.
+            </p>
+            <ul className="oldest-unread-list">
+              {oldestUnread.map((item) => (
+                <li key={item.id} className="oldest-unread-row">
+                  <span className="oldest-unread-title">
+                    {item.title || item.url}
+                  </span>
+                  <span className="article-date text-muted">
+                    {item.created_at.slice(0, 10)}
+                  </span>
+                  <form action={setSkipState.bind(null, item.id, true)}>
+                    <button type="submit" className="btn btn-secondary">
+                      Skip
+                    </button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {visible.length === 0 ? (
           <p className="empty">No articles match your filters.</p>

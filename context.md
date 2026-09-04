@@ -14,12 +14,12 @@ Read-later piles die because saving is easy and choosing what to read is not. Th
 ## Core loop
 1. **Capture**: Paste URL(s) in Telegram (any device). Worker on the always-on NUC.
 2. **Ingest**: Fetch, extract, Groq snapshot + subject/topics/keywords/priority; reuse the growing subject/topic vocabulary; store in Supabase.
-3. **Rank** (daily): score unread items; write `daily_picks`.
-4. **Digest**: Telegram message with top picks and Mark read buttons (at most once per day).
-5. **Browse**: Vercel site reorganizes (Today, Unread, Topics, All, Path). Mark read there too.
+3. **Rank** (daily): score the unread queue (`ready`, not skipped); write `daily_picks`.
+4. **Digest**: Telegram message with top picks and Mark read / Skip buttons (at most once per day).
+5. **Browse**: Vercel site reorganizes (Today, All, Unfetched). Mark read or skip there too.
 
 ## Ranking (weights)
-Unread only. Topic demand 0.45, recency 0.20, path novelty 0.20, LLM priority 0.15. Keywords stay specific and are for near-duplicates. Ingest prefers existing subjects. Near-duplicates of already-read or of a stronger unread canonical are omitted. At most two picks per subject. Top 5.
+Unread queue only (`read_at` and `skipped_at` both empty). Topic demand 0.45, recency 0.20, path novelty 0.20, LLM priority 0.15. Keywords stay specific and are display-only. Ingest prefers existing subjects. At most two picks per subject. Top 5. Skip leaves the queue without marking read.
 
 ## Success metric (personal)
 Week two: are tabs actually closed, and do digest picks get marked read? If not, tune ranking before adding features.

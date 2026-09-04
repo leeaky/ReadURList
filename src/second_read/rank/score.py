@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Sequence
 
-DUPLICATE_JACCARD = 0.6
 PATH_WINDOW = 10
 
 W_DEMAND = 0.45
@@ -22,7 +21,7 @@ class RankItem:
     created_at: datetime
     read_at: datetime | None
     priority: int
-    similar_to_item_id: int | None = None
+    skipped_at: datetime | None = None
 
 
 @dataclass
@@ -35,22 +34,6 @@ class Pick:
 
 def _norm(text: str) -> str:
     return (text or "").strip().lower()
-
-
-def _parts(*values: str) -> set[str]:
-    return {_norm(p) for p in values if p and _norm(p)}
-
-
-def _dup_tags(item: RankItem) -> set[str]:
-    return _parts(item.subject, *item.topics, *item.keywords)
-
-
-def jaccard(a: Sequence[str] | set[str], b: Sequence[str] | set[str]) -> float:
-    sa = {_norm(x) for x in a if x and _norm(x)}
-    sb = {_norm(x) for x in b if x and _norm(x)}
-    if not sa or not sb:
-        return 0.0
-    return len(sa & sb) / len(sa | sb)
 
 
 def _topic_demand(item: RankItem, unread: Sequence[RankItem]) -> float:
@@ -92,43 +75,7 @@ def _priority_norm(item: RankItem) -> float:
     return p / 5.0
 
 
-def _is_near_dup(a: RankItem, b: RankItem) -> bool:
-    return jaccard(_dup_tags(a), _dup_tags(b)) >= DUPLICATE_JACCARD
-
-
-def _canonical_key(item: RankItem) -> tuple:
-    """Higher priority, then older save, then lower id wins as cluster representative."""
-    created = item.created_at.timestamp() if item.created_at else 0.0
-    return (-(item.priority or 3), created, item.id)
-
-
-def _keep_canonical_unread(unread: list[RankItem]) -> list[RankItem]:
-    """Drop near-duplicates of a stronger unread canonical (keeps one per dup group)."""
-    n = len(unread)
-    if n <= 1:
-        return list(unread)
-    parent = list(range(n))
-
-    def find(i: int) -> int:
-        while parent[i] != i:
-            parent[i] = parent[parent[i]]
-            i = parent[i]
-        return i
-
-    for i in range(n):
-        for j in range(i + 1, n):
-            if _is_near_dup(unread[i], unread[j]):
-                ri, rj = find(i), find(j)
-                if ri != rj:
-                    parent[rj] = ri
-
-    groups: dict[int, list[RankItem]] = {}
-    for i, item in enumerate(unread):
-        groups.setdefault(find(i), []).append(item)
-    return [min(group, key=_canonical_key) for group in groups.values()]
-
-
-def _reason(item: RankItem, *, demand: float, novelty: float, dup_note: str | None) -> str:
+def _reason(item: RankItem, *, demand: float, novelty: float) -> str:
     bits: list[str] = []
     if demand >= 0.2:
         bits.append(f"you keep saving {item.subject or 'this topic'}")
@@ -136,8 +83,6 @@ def _reason(item: RankItem, *, demand: float, novelty: float, dup_note: str | No
         bits.append("not yet on your reading path")
     if item.priority >= 4:
         bits.append("high-signal source")
-    if dup_note:
-        bits.append(dup_note)
     if not bits:
         bits.append("recent unread save")
     return "; ".join(bits)
@@ -149,19 +94,16 @@ def score_unread(
     now: datetime,
     top_n: int = 5,
 ) -> list[Pick]:
-    unread = [i for i in items if i.read_at is None]
+    unread = [i for i in items if i.read_at is None and i.skipped_at is None]
     read = [i for i in items if i.read_at is not None]
     recent_read = sorted(
         read,
         key=lambda r: r.read_at or r.created_at,
         reverse=True,
     )[:PATH_WINDOW]
-    unread = _keep_canonical_unread(unread)
 
     scored: list[tuple[float, RankItem, str]] = []
     for item in unread:
-        if any(_is_near_dup(item, r) for r in read):
-            continue
         demand = _topic_demand(item, unread)
         recency = _recency(item, now)
         novelty = _path_novelty(item, recent_read)
@@ -172,22 +114,18 @@ def score_unread(
             + W_NOVELTY * novelty
             + W_PRIORITY * prio
         )
-        reason = _reason(item, demand=demand, novelty=novelty, dup_note=None)
+        reason = _reason(item, demand=demand, novelty=novelty)
         scored.append((total, item, reason))
 
     scored.sort(key=lambda row: (-row[0], row[1].id))
 
     picks: list[Pick] = []
-    picked_items: list[RankItem] = []
     subject_counts: dict[str, int] = {}
 
     for total, item, reason in scored:
         subject = _norm(item.subject) or "misc"
         if subject_counts.get(subject, 0) >= 2:
             continue
-        if any(_is_near_dup(item, p) for p in picked_items):
-            continue
-        picked_items.append(item)
         subject_counts[subject] = subject_counts.get(subject, 0) + 1
         picks.append(
             Pick(

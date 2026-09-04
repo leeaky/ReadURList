@@ -89,6 +89,42 @@ describe("itemMatchesFilter", () => {
     assert.equal(itemMatchesFilter(unread, { ...empty, status: "read" }), false);
     assert.equal(itemMatchesFilter(read, { ...empty, status: "read" }), true);
   });
+
+  it("treats skipped items as out of the unread queue", () => {
+    const skipped = item({
+      title: "S",
+      read_at: null,
+      skipped_at: "2026-09-01T00:00:00Z",
+    });
+    const queued = item({ title: "Q", read_at: null, skipped_at: null });
+    assert.equal(itemMatchesFilter(skipped, { ...empty, status: "unread" }), false);
+    assert.equal(itemMatchesFilter(queued, { ...empty, status: "unread" }), true);
+    assert.equal(itemMatchesFilter(skipped, { ...empty, status: "skipped" }), true);
+    assert.equal(itemMatchesFilter(queued, { ...empty, status: "skipped" }), false);
+  });
+
+  it("filters stale unread as queue items 14+ days old", () => {
+    const now = new Date("2026-09-04T00:00:00Z");
+    const stale = item({
+      title: "Old",
+      created_at: "2026-08-10T00:00:00Z",
+      read_at: null,
+    });
+    const fresh = item({
+      title: "New",
+      created_at: "2026-09-01T00:00:00Z",
+      read_at: null,
+    });
+    const skippedOld = item({
+      title: "Skip",
+      created_at: "2026-08-01T00:00:00Z",
+      skipped_at: "2026-08-02T00:00:00Z",
+    });
+    const staleState = { ...empty, status: "stale" as const, now };
+    assert.equal(itemMatchesFilter(stale, staleState), true);
+    assert.equal(itemMatchesFilter(fresh, staleState), false);
+    assert.equal(itemMatchesFilter(skippedOld, staleState), false);
+  });
 });
 
 describe("filterItems", () => {

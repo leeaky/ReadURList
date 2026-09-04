@@ -15,6 +15,7 @@ from second_read.bot.handlers import (
     handle_digest,
     handle_message,
     handle_read_callback,
+    handle_skip_callback,
     handle_start,
 )
 from second_read.config import Settings
@@ -43,6 +44,7 @@ def build_app(settings: Settings, llm: LLMProvider) -> Application:
     app.add_handler(CommandHandler("start", handle_start))
     app.add_handler(CommandHandler("digest", handle_digest))
     app.add_handler(CallbackQueryHandler(handle_read_callback, pattern=r"^read:"))
+    app.add_handler(CallbackQueryHandler(handle_skip_callback, pattern=r"^skip:"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     if app.job_queue is not None:

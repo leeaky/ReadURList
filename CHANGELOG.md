@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Ranking no longer omits tag-overlap near-duplicates or writes `similar_to_item_id`. Picks use demand, recency, path novelty, and priority only; keywords stay on cards as display.
+- All and Organize page through Supabase in 1000-row windows so the library cannot silently truncate.
 - Clusters browse is gone. Topics (by subject) is the grouping; ranking no longer uses cluster centrality (weights 0.45 / 0.20 / 0.20 / 0.15).
 - Groq JSON calls use structured outputs, spend remaining TPM on completion tokens (gpt-oss reasoning), retry empty json_validate_failed, and consolidate from unique labels so the daily remap fits on-demand Groq.
 - Ingest reuses existing ready subjects/topics; the daily job consolidates near-duplicate tags when unique subjects are more than half of ready items.
@@ -23,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Today’s topic/tag sidebar lists only that day’s picks. All and Organize show the full tag list (no 18-tag cap). Duplicate tags on one article are collapsed.
 
 ### Added
+- Skip / restore: leave the ranking queue without marking read. Cards and the Telegram digest have Skip; All filters Unread, Stale 14+, Read, and Skipped. Organize lists the oldest unread items and puts count-1 labels first so they are easy to merge.
 - Fetch/extract failures save `pending_body` stubs; Unfetched page for paste/PDF; daily NUC Groq fill-in before digest.
 - Multi-URL paste in Telegram (sequential `n/N` snapshots).
 - Daily cluster + ranking job, `daily_picks`, Telegram digest with Mark read buttons (`/digest` to run now).

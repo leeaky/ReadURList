@@ -15,6 +15,7 @@ def _item(
     keywords: list[str] | None = None,
     days_ago: int = 1,
     read: bool = False,
+    skipped: bool = False,
     priority: int = 3,
 ) -> RankItem:
     created = NOW - timedelta(days=days_ago)
@@ -26,6 +27,7 @@ def _item(
         created_at=created,
         read_at=created if read else None,
         priority=priority,
+        skipped_at=created if skipped else None,
     )
 
 
@@ -53,7 +55,7 @@ def test_diversity_cap_at_most_two_per_subject():
     assert len(picks) <= 5
 
 
-def test_duplicate_of_already_read_is_omitted():
+def test_unread_with_overlapping_tags_of_read_item_still_ranks():
     read = _item(
         1,
         subject="llms",
@@ -61,7 +63,7 @@ def test_duplicate_of_already_read_is_omitted():
         topics=["llms"],
         read=True,
     )
-    dup = _item(
+    overlapping = _item(
         2,
         subject="llms",
         keywords=["transformer", "attention", "gpt"],
@@ -77,12 +79,11 @@ def test_duplicate_of_already_read_is_omitted():
         read=False,
         days_ago=0,
     )
-    picks = score_unread([read, dup, other], now=NOW, top_n=5)
-    assert 2 not in {p.item_id for p in picks}
-    assert 3 in {p.item_id for p in picks}
+    picks = score_unread([read, overlapping, other], now=NOW, top_n=5)
+    assert {p.item_id for p in picks} == {2, 3}
 
 
-def test_near_duplicate_unread_is_buried_behind_canonical():
+def test_two_unread_with_overlapping_tags_can_both_rank():
     a = _item(
         1,
         subject="llms",
@@ -107,18 +108,8 @@ def test_near_duplicate_unread_is_buried_behind_canonical():
         days_ago=1,
         priority=4,
     )
-    d = _item(
-        4,
-        subject="markets",
-        keywords=["rates", "bonds"],
-        topics=["finance"],
-        days_ago=1,
-        priority=4,
-    )
-    picks = score_unread([a, b, c, d], now=NOW, top_n=3)
-    ids = [p.item_id for p in picks]
-    assert 1 in ids
-    assert 2 not in ids
+    picks = score_unread([a, b, c], now=NOW, top_n=5)
+    assert {p.item_id for p in picks} == {1, 2, 3}
 
 
 def test_path_novelty_boosts_unseen_subject():
@@ -185,6 +176,11 @@ def test_ranking_weights_are_four_signals_summing_to_one():
     ) < 1e-9
     assert not hasattr(score, "W_CENTRAL")
     assert not hasattr(score, "cluster_items")
+    assert not hasattr(score, "jaccard")
+    assert not hasattr(score, "DUPLICATE_JACCARD")
+    assert not hasattr(score, "_is_near_dup")
+    assert not hasattr(score, "_keep_canonical_unread")
+    assert not hasattr(score, "_dup_tags")
 
 
 def test_demand_reason_says_you_keep_saving_not_cluster():
@@ -197,7 +193,7 @@ def test_demand_reason_says_you_keep_saving_not_cluster():
     assert any("you keep saving llms" in p.reason for p in picks)
 
 
-def test_shared_bucket_is_not_a_near_duplicate_when_keywords_differ():
+def test_two_unread_same_subject_still_cap_at_two():
     a = _item(
         1,
         subject="llms",
@@ -217,28 +213,15 @@ def test_shared_bucket_is_not_a_near_duplicate_when_keywords_differ():
     assert {p.item_id for p in picks} == {1, 2}
 
 
-def test_near_dup_still_uses_keyword_overlap():
-    a = _item(
-        1,
-        subject="llms",
-        topics=["large language models"],
-        keywords=["transformer", "attention", "gpt", "openai"],
-        read=True,
-    )
-    b = _item(
-        2,
-        subject="llms",
-        topics=["large language models"],
-        keywords=["transformer", "attention", "gpt", "openai"],
-        days_ago=0,
-    )
-    other = _item(
-        3,
-        subject="climate",
-        topics=["ice"],
-        keywords=["antarctica"],
-        days_ago=0,
-    )
-    picks = score_unread([a, b, other], now=NOW, top_n=5)
-    assert 2 not in {p.item_id for p in picks}
-    assert 3 in {p.item_id for p in picks}
+def test_skipped_item_is_not_ranked():
+    skipped = _item(1, skipped=True, priority=5, days_ago=0)
+    other = _item(2, subject="climate", days_ago=1)
+    picks = score_unread([skipped, other], now=NOW, top_n=5)
+    assert [p.item_id for p in picks] == [2]
+
+
+def test_restoring_skipped_item_returns_it_to_pool():
+    item = _item(1, skipped=True)
+    assert score_unread([item], now=NOW, top_n=5) == []
+    item.skipped_at = None
+    assert [p.item_id for p in score_unread([item], now=NOW, top_n=5)] == [1]

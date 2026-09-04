@@ -16,12 +16,10 @@ from second_read.db import (
 from second_read.ingest.complete import complete_pending_bodies
 from second_read.llm.base import LLMProvider
 from second_read.rank.digest import should_send_digest
-from second_read.rank.score import RankItem, jaccard, score_unread
+from second_read.rank.score import RankItem, score_unread
 from second_read.tags.consolidate import maybe_consolidate_tags
 
 logger = logging.getLogger(__name__)
-
-DUPLICATE_FLAG = 0.6
 
 
 def _to_rank_item(row: Item) -> RankItem:
@@ -33,12 +31,12 @@ def _to_rank_item(row: Item) -> RankItem:
         created_at=row.created_at or datetime.now().astimezone(),
         read_at=row.read_at,
         priority=row.priority or 3,
-        similar_to_item_id=row.similar_to_item_id,
+        skipped_at=row.skipped_at,
     )
 
 
 def persist_ranking(*, now: datetime | None = None) -> list[DailyPick]:
-    """Rebuild similar-to flags and today's daily_picks. No Telegram."""
+    """Rebuild today's daily_picks. No Telegram."""
     now = now or datetime.now().astimezone()
     today = now.date()
     session = get_session()
@@ -50,20 +48,6 @@ def persist_ranking(*, now: datetime | None = None) -> list[DailyPick]:
         )
         rank_items = [_to_rank_item(i) for i in items]
         by_id = {i.id: i for i in items}
-
-        for row in items:
-            others = [x for x in rank_items if x.id != row.id]
-            best = None
-            best_j = DUPLICATE_FLAG
-            for other in others:
-                sim = jaccard(
-                    [row.subject, *(row.topics or []), *(row.keywords or [])],
-                    [other.subject, *other.topics, *other.keywords],
-                )
-                if sim >= best_j:
-                    best_j = sim
-                    best = other.id
-            row.similar_to_item_id = best
 
         session.query(DailyPick).filter(DailyPick.run_on == today).delete()
         picks = score_unread(rank_items, now=now, top_n=5)
@@ -134,7 +118,11 @@ def format_digest(picks: list[DailyPick]) -> tuple[str, InlineKeyboardMarkup | N
                     InlineKeyboardButton(
                         f"Mark read · {pick.rank}",
                         callback_data=f"read:{item.id}",
-                    )
+                    ),
+                    InlineKeyboardButton(
+                        f"Skip · {pick.rank}",
+                        callback_data=f"skip:{item.id}",
+                    ),
                 ]
             )
         markup = InlineKeyboardMarkup(buttons) if buttons else None

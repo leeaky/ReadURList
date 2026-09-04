@@ -5,9 +5,13 @@ export type FilterableItem = {
   topics: string[] | null;
   url?: string;
   read_at?: string | null;
+  skipped_at?: string | null;
+  created_at?: string | null;
 };
 
-export type FilterStatus = "unread" | "read" | null;
+export type FilterStatus = "unread" | "read" | "skipped" | "stale" | null;
+
+export const STALE_UNREAD_DAYS = 14;
 
 export type FilterState = {
   search: string;
@@ -15,7 +19,31 @@ export type FilterState = {
   selectedTags: string[];
   status?: FilterStatus;
   matchUrl?: boolean;
+  now?: Date;
 };
+
+export function isQueueItem(item: {
+  read_at?: string | null;
+  skipped_at?: string | null;
+}): boolean {
+  return !item.read_at && !item.skipped_at;
+}
+
+export function isStaleUnread(
+  item: { created_at?: string | null; read_at?: string | null; skipped_at?: string | null },
+  now: Date = new Date(),
+  days: number = STALE_UNREAD_DAYS,
+): boolean {
+  if (!isQueueItem(item) || !item.created_at) {
+    return false;
+  }
+  const created = new Date(item.created_at);
+  if (Number.isNaN(created.getTime())) {
+    return false;
+  }
+  const ageMs = now.getTime() - created.getTime();
+  return ageMs >= days * 24 * 60 * 60 * 1000;
+}
 
 export function itemMatchesFilter(item: FilterableItem, state: FilterState): boolean {
   const q = state.search.trim().toLowerCase();
@@ -44,10 +72,16 @@ export function itemMatchesFilter(item: FilterableItem, state: FilterState): boo
     }
   }
 
-  if (state.status === "unread" && item.read_at) {
+  if (state.status === "unread" && !isQueueItem(item)) {
     return false;
   }
   if (state.status === "read" && !item.read_at) {
+    return false;
+  }
+  if (state.status === "skipped" && (!item.skipped_at || item.read_at)) {
+    return false;
+  }
+  if (state.status === "stale" && !isStaleUnread(item, state.now ?? new Date())) {
     return false;
   }
 

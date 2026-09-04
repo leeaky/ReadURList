@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import {
   sendItemToUnfetched,
   setReadState,
+  setSkipState,
   updateItemMetadata,
   type SendToUnfetchedState,
   type UpdateItemMetadataState,
@@ -31,7 +32,11 @@ export function ItemCard({
   subjects: string[];
 }) {
   const read = Boolean(item.read_at);
+  const skipped = Boolean(item.skipped_at);
+  const inQueue = !read && !skipped;
   const toggle = setReadState.bind(null, item.id, !read);
+  const skip = setSkipState.bind(null, item.id, true);
+  const restore = setSkipState.bind(null, item.id, false);
   const topics = uniqueTopics(item.topics);
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -78,7 +83,7 @@ export function ItemCard({
   }
 
   return (
-    <article className={read ? "article-card is-read" : "article-card"}>
+    <article className={read ? "article-card is-read" : skipped ? "article-card is-skipped" : "article-card"}>
       <button
         type="button"
         className="article-header"
@@ -92,6 +97,7 @@ export function ItemCard({
               <span className="tag tag-outline">{item.subject}</span>
             ) : null}
             {read ? <span className="read-label text-muted">Read</span> : null}
+            {skipped && !read ? <span className="read-label text-muted">Skipped</span> : null}
           </div>
           <div className="article-title">
             {item.title || item.url}
@@ -225,11 +231,6 @@ export function ItemCard({
             <>
               {item.snapshot ? <p className="article-summary">{item.snapshot}</p> : null}
               {reason ? <p className="article-why text-muted">Why: {reason}</p> : null}
-              {item.similar_to_item_id ? (
-                <p className="article-note text-muted">
-                  Possible duplicate of item #{item.similar_to_item_id}
-                </p>
-              ) : null}
               {topics.length > 0 ? (
                 <div className="article-tags">
                   {topics.map((tag) => (
@@ -255,6 +256,20 @@ export function ItemCard({
                       {read ? "Mark unread" : "Mark read"}
                     </button>
                   </form>
+                  {inQueue ? (
+                    <form action={skip}>
+                      <button type="submit" className="btn btn-secondary">
+                        Skip
+                      </button>
+                    </form>
+                  ) : null}
+                  {skipped && !read ? (
+                    <form action={restore}>
+                      <button type="submit" className="btn btn-secondary">
+                        Restore to queue
+                      </button>
+                    </form>
+                  ) : null}
                   <button type="button" className="btn btn-secondary" onClick={startEdit}>
                     Edit
                   </button>

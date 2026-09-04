@@ -70,6 +70,9 @@ class Item(Base):
     read_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    skipped_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
 
 class DailyPick(Base):
@@ -137,6 +140,7 @@ def _migrate_sqlite(engine) -> None:
             "similar_to_item_id": "ALTER TABLE items ADD COLUMN similar_to_item_id INTEGER",
             "read_at": "ALTER TABLE items ADD COLUMN read_at DATETIME",
             "ingest_status": "ALTER TABLE items ADD COLUMN ingest_status VARCHAR(32) NOT NULL DEFAULT 'ready'",
+            "skipped_at": "ALTER TABLE items ADD COLUMN skipped_at DATETIME",
         }
         for name, sql in alters.items():
             if name not in columns:
@@ -177,6 +181,27 @@ def mark_item_read(item_id: int, *, read: bool, when: datetime | None = None) ->
             item.read_at = when or datetime.now().astimezone()
         else:
             item.read_at = None
+        session.commit()
+        session.refresh(item)
+        session.expunge(item)
+        return item
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def mark_item_skipped(item_id: int, *, skipped: bool, when: datetime | None = None) -> Item | None:
+    session = get_session()
+    try:
+        item = session.get(Item, item_id)
+        if item is None:
+            return None
+        if skipped:
+            item.skipped_at = when or datetime.now().astimezone()
+        else:
+            item.skipped_at = None
         session.commit()
         session.refresh(item)
         session.expunge(item)

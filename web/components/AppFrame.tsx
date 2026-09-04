@@ -72,6 +72,10 @@ export function AppFrame({
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [status, setStatus] = useState<FilterStatus>(initialStatus);
 
+  useEffect(() => {
+    setStatus(initialStatus);
+  }, [initialStatus]);
+
   const toggleSubject = useCallback((name: string) => {
     setSelectedSubjects((prev) => toggleIn(prev, name));
   }, []);

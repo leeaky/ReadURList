@@ -73,6 +73,19 @@ export async function setReadState(itemId: number, read: boolean) {
   revalidateCorpus();
 }
 
+export async function setSkipState(itemId: number, skipped: boolean) {
+  const db = supabaseAdmin();
+  const { error } = await db
+    .from("items")
+    .update({ skipped_at: skipped ? new Date().toISOString() : null })
+    .eq("id", itemId)
+    .eq("ingest_status", "ready");
+  if (error) {
+    throw new Error(error.message);
+  }
+  revalidateCorpus();
+}
+
 export type UpdateItemMetadataState =
   | { ok: true; saved: boolean }
   | { ok: false; error: string };

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from second_read.db import mark_item_read
+from second_read.db import mark_item_read, mark_item_skipped
 from second_read.ingest import INGEST_PENDING_BODY, ingest_url
 from second_read.ingest.extract import find_urls
 from second_read.rank.run import run_digest_job
@@ -126,6 +126,29 @@ async def handle_read_callback(update, context) -> None:
         await query.edit_message_reply_markup(reply_markup=None)
     except Exception:
         logger.debug("Could not clear markup after mark-read")
+
+
+async def handle_skip_callback(update, context) -> None:
+    settings = context.application.bot_data["settings"]
+    query = update.callback_query
+    if not query or not query.data:
+        return
+    if not update.effective_user or update.effective_user.id != settings.telegram_user_id:
+        await query.answer("Not allowed.")
+        return
+    if not query.data.startswith("skip:"):
+        await query.answer()
+        return
+    try:
+        item_id = int(query.data.split(":", 1)[1])
+    except ValueError:
+        await query.answer("Bad id")
+        return
+    item = mark_item_skipped(item_id, skipped=True)
+    if item is None:
+        await query.answer("Not found")
+        return
+    await query.answer("Skipped")
 
 
 def _escape_md(text: str) -> str:

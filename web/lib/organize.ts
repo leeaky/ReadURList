@@ -252,3 +252,29 @@ export function parseItemIds(raw: unknown): ItemIdsResult {
   }
   return { ok: true, ids };
 }
+
+export const OLDEST_UNREAD_LIMIT = 5;
+
+export type QueueTriageItem = {
+  id: number;
+  created_at: string;
+  read_at?: string | null;
+  skipped_at?: string | null;
+};
+
+export function oldestUnreadQueue<T extends QueueTriageItem>(
+  items: T[],
+  limit = OLDEST_UNREAD_LIMIT,
+): T[] {
+  return items
+    .filter((item) => !item.read_at && !item.skipped_at)
+    .slice()
+    .sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id - b.id)
+    .slice(0, limit);
+}
+
+export function pinSingletonLabels<T extends { count: number }>(rows: T[]): T[] {
+  const singles = rows.filter((row) => row.count === 1);
+  const rest = rows.filter((row) => row.count !== 1);
+  return [...singles, ...rest];
+}
