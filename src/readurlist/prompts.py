@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-INGEST_SYSTEM = """You extract a reading snapshot from an article for a personal corpus.
+INGEST_SYSTEM = """You extract a reading snapshot from an article for a reading corpus.
 Return JSON only. Be factual — no teaser, no hype, no clickbait.
 snapshot: 2–4 sentences covering what the piece is and why it might matter.
 subject: one short shared bucket (e.g. Claude Code, not a paper title). Reuse an existing subject from the prompt exactly unless none fit.
@@ -32,7 +32,7 @@ INGEST_SCHEMA = {
     },
 }
 
-CONSOLIDATE_SYSTEM = """You merge near-duplicate subject and topic labels for a personal reading corpus.
+CONSOLIDATE_SYSTEM = """You merge near-duplicate subject and topic labels for a reading corpus.
 Return JSON only — never an empty response. Merge labels that mean the same bucket (e.g. Claude Code / Claude Code training / Claude 101 course → Claude Code).
 Do not collapse distinct domains into a tiny generic list (public health stays separate from LLM papers).
 Do not invent new items. Identity mapping is allowed; empty arrays are valid. Do not output keywords, titles, or snapshots."""

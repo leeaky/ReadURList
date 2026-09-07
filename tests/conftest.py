@@ -1,6 +1,6 @@
 import pytest
 
-from second_read.db import reset_engine
+from readurlist.db import reset_engine
 
 
 @pytest.fixture(autouse=True)

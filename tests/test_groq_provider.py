@@ -4,8 +4,8 @@ from types import SimpleNamespace
 import httpx
 from openai import APIStatusError, BadRequestError
 
-from second_read.llm.groq_provider import GroqProvider
-from second_read.prompts import CONSOLIDATE_SCHEMA, INGEST_SCHEMA, INGEST_SYSTEM
+from readurlist.llm.groq_provider import GroqProvider
+from readurlist.prompts import CONSOLIDATE_SCHEMA, INGEST_SCHEMA, INGEST_SYSTEM
 
 
 def _billed_tpm(kwargs: dict) -> int:

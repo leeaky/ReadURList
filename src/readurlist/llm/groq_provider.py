@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 from openai import APIStatusError, OpenAI, RateLimitError
 
-from second_read.llm.base import LLMProvider
+from readurlist.llm.base import LLMProvider
 
 logger = logging.getLogger(__name__)
 

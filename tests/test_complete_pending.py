@@ -1,14 +1,14 @@
 import asyncio
 from types import SimpleNamespace
 
-from second_read.config import Settings
-from second_read.db import Item, get_session, init_db
-from second_read.ingest.complete import (
+from readurlist.config import Settings
+from readurlist.db import Item, get_session, init_db
+from readurlist.ingest.complete import (
     complete_pending_bodies,
     complete_pending_bodies_sync,
 )
-from second_read.llm.base import LLMProvider
-from second_read.rank import run as rank_run
+from readurlist.llm.base import LLMProvider
+from readurlist.rank import run as rank_run
 
 
 class FakeLLM:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from second_read.rank.score import RankItem, score_unread
+from readurlist.rank.score import RankItem, score_unread
 
 NOW = datetime(2026, 8, 20, 8, 0, tzinfo=timezone.utc)
 
@@ -163,7 +163,7 @@ def test_clearing_read_at_returns_item_to_pool():
 
 
 def test_ranking_weights_are_four_signals_summing_to_one():
-    import second_read.rank.score as score
+    import readurlist.rank.score as score
 
     assert (score.W_DEMAND, score.W_RECENCY, score.W_NOVELTY, score.W_PRIORITY) == (
         0.45,

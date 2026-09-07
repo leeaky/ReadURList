@@ -1,8 +1,8 @@
-from second_read.config import Settings
-from second_read.db import Item, get_session, init_db
-from second_read.ingest import ingest_url
-from second_read.ingest.extract import ExtractError, FetchError
-from second_read.llm.base import LLMProvider
+from readurlist.config import Settings
+from readurlist.db import Item, get_session, init_db
+from readurlist.ingest import ingest_url
+from readurlist.ingest.extract import ExtractError, FetchError
+from readurlist.llm.base import LLMProvider
 
 
 class CountingLLM:
@@ -30,7 +30,7 @@ def test_fetch_error_saves_pending_stub_without_llm(tmp_path, monkeypatch):
     def boom(url: str, timeout: float = 30.0):
         raise FetchError("Site rate-limited or unavailable (HTTP 429).", status_code=429)
 
-    monkeypatch.setattr("second_read.ingest.extract_article", boom)
+    monkeypatch.setattr("readurlist.ingest.extract_article", boom)
     llm: LLMProvider = CountingLLM()  # type: ignore[assignment]
     url = "https://example.com/blocked"
 
@@ -55,7 +55,7 @@ def test_extract_error_keeps_headline(tmp_path, monkeypatch):
     def boom(url: str, timeout: float = 30.0):
         raise ExtractError("Could not extract enough article text from URL", title="Nice Headline")
 
-    monkeypatch.setattr("second_read.ingest.extract_article", boom)
+    monkeypatch.setattr("readurlist.ingest.extract_article", boom)
     llm: LLMProvider = CountingLLM()  # type: ignore[assignment]
 
     item, created = ingest_url("https://example.com/short", llm, _settings(db))
@@ -76,7 +76,7 @@ def test_stub_dedup_returns_existing(tmp_path, monkeypatch):
         calls["n"] += 1
         raise FetchError("Could not fetch page (HTTP 403).", status_code=403)
 
-    monkeypatch.setattr("second_read.ingest.extract_article", boom)
+    monkeypatch.setattr("readurlist.ingest.extract_article", boom)
     llm: LLMProvider = CountingLLM()  # type: ignore[assignment]
     url = "https://example.com/once"
     first, c1 = ingest_url(url, llm, _settings(db))

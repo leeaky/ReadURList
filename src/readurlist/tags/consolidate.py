@@ -3,12 +3,12 @@ from __future__ import annotations
 import json
 import logging
 
-from second_read.config import Settings
-from second_read.db import Item, get_session
-from second_read.llm.base import LLMProvider
-from second_read.prompts import CONSOLIDATE_SCHEMA, CONSOLIDATE_SYSTEM
-from second_read.tags.normalize import should_consolidate
-from second_read.tags.vocab import apply_tag_maps, load_vocabulary
+from readurlist.config import Settings
+from readurlist.db import Item, get_session
+from readurlist.llm.base import LLMProvider
+from readurlist.prompts import CONSOLIDATE_SCHEMA, CONSOLIDATE_SYSTEM
+from readurlist.tags.normalize import should_consolidate
+from readurlist.tags.vocab import apply_tag_maps, load_vocabulary
 
 logger = logging.getLogger(__name__)
 

@@ -1,4 +1,4 @@
-from second_read.ingest.summarize import summarize_article
+from readurlist.ingest.summarize import summarize_article
 
 
 class FakeLLM:

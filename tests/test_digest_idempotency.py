@@ -1,6 +1,6 @@
 from datetime import date
 
-from second_read.rank.digest import should_send_digest
+from readurlist.rank.digest import should_send_digest
 
 
 def test_digest_sends_when_no_run_today():

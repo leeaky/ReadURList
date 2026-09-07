@@ -6,18 +6,18 @@ from datetime import date, datetime
 
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 
-from second_read.config import Settings
-from second_read.db import (
+from readurlist.config import Settings
+from readurlist.db import (
     DailyPick,
     DigestRun,
     Item,
     get_session,
 )
-from second_read.ingest.complete import complete_pending_bodies
-from second_read.llm.base import LLMProvider
-from second_read.rank.digest import should_send_digest
-from second_read.rank.score import RankItem, score_unread
-from second_read.tags.consolidate import maybe_consolidate_tags
+from readurlist.ingest.complete import complete_pending_bodies
+from readurlist.llm.base import LLMProvider
+from readurlist.rank.digest import should_send_digest
+from readurlist.rank.score import RankItem, score_unread
+from readurlist.tags.consolidate import maybe_consolidate_tags
 
 logger = logging.getLogger(__name__)
 
@@ -180,14 +180,14 @@ async def run_digest_job(
 
 
 def main() -> None:
-    """CLI: `python -m second_read.rank` — rank now; send digest if not yet today."""
+    """CLI: `python -m readurlist.rank` — rank now; send digest if not yet today."""
     import asyncio
 
     from telegram import Bot
 
-    from second_read.config import get_settings
-    from second_read.db import init_db
-    from second_read.llm import GroqProvider
+    from readurlist.config import get_settings
+    from readurlist.db import init_db
+    from readurlist.llm import GroqProvider
 
     settings = get_settings()
     init_db(settings.database_url)

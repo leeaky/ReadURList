@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from second_read.config import Settings
-from second_read.db import Item, get_session, init_db
-from second_read.ingest import ingest_url
-from second_read.llm.base import LLMProvider
+from readurlist.config import Settings
+from readurlist.db import Item, get_session, init_db
+from readurlist.ingest import ingest_url
+from readurlist.llm.base import LLMProvider
 
 
 class FakeLLM:
@@ -22,9 +22,9 @@ def test_same_url_does_not_insert_second_item(tmp_path, monkeypatch):
     def fake_extract(url: str, timeout: float = 30.0):
         return "Example", "x" * 200
 
-    monkeypatch.setattr("second_read.ingest.extract_article", fake_extract)
-    monkeypatch.setattr("second_read.ingest.summarize_article", lambda *a, **k: __import__(
-        "second_read.ingest.summarize", fromlist=["IngestResult"]
+    monkeypatch.setattr("readurlist.ingest.extract_article", fake_extract)
+    monkeypatch.setattr("readurlist.ingest.summarize_article", lambda *a, **k: __import__(
+        "readurlist.ingest.summarize", fromlist=["IngestResult"]
     ).IngestResult(
         title="Example",
         snapshot="A short snapshot of the piece.",

@@ -1,7 +1,7 @@
 [project]
-name = "second-read"
+name = "readurlist"
 version = "0.2.0"
-description = "ReadURList — saved URLs become a ranked personal reading corpus via Telegram"
+description = "ReadURList — saved URLs become a ranked reading corpus via Telegram"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -20,8 +20,8 @@ dependencies = [
 dev = ["pytest>=8.0"]
 
 [project.scripts]
-second-read = "second_read.main:main"
-second-read-digest = "second_read.rank.run:main"
+readurlist = "readurlist.main:main"
+readurlist-digest = "readurlist.rank.run:main"
 
 [build-system]
 requires = ["setuptools>=68"]

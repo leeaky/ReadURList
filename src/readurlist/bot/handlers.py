@@ -3,10 +3,10 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from second_read.db import mark_item_read, mark_item_skipped
-from second_read.ingest import INGEST_PENDING_BODY, ingest_url
-from second_read.ingest.extract import find_urls
-from second_read.rank.run import run_digest_job
+from readurlist.db import mark_item_read, mark_item_skipped
+from readurlist.ingest import INGEST_PENDING_BODY, ingest_url
+from readurlist.ingest.extract import find_urls
+from readurlist.rank.run import run_digest_job
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ async def handle_start(update, context) -> None:
     await update.message.reply_text(
         "ReadURList is listening.\n"
         "• Paste a URL (or several) to save a snapshot.\n"
-        "• Daily digest: ranked unread reads, with Mark read buttons.\n"
+        "• Daily digest: ranked unread reads, with Mark read and Skip buttons.\n"
         "• Browse the corpus on the website (see README)."
     )
 

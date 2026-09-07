@@ -11,16 +11,16 @@ from telegram.ext import (
     filters,
 )
 
-from second_read.bot.handlers import (
+from readurlist.bot.handlers import (
     handle_digest,
     handle_message,
     handle_read_callback,
     handle_skip_callback,
     handle_start,
 )
-from second_read.config import Settings
-from second_read.llm.base import LLMProvider
-from second_read.rank.run import run_digest_job
+from readurlist.config import Settings
+from readurlist.llm.base import LLMProvider
+from readurlist.rank.run import run_digest_job
 
 logger = logging.getLogger(__name__)
 

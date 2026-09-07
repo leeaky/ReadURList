@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from second_read.db import Item, get_session, init_db, mark_item_read, mark_item_skipped
+from readurlist.db import Item, get_session, init_db, mark_item_read, mark_item_skipped
 
 
 def test_mark_item_read_and_unread(tmp_path):

@@ -1,4 +1,4 @@
-from second_read.ingest.extract import find_urls
+from readurlist.ingest.extract import find_urls
 
 
 def test_find_urls_extracts_several_in_one_message():

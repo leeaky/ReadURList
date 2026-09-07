@@ -1,7 +1,7 @@
 from datetime import date
 
-from second_read.db import DigestRun, get_session, init_db
-from second_read.rank.run import _existing_digest_run, _record_digest_run
+from readurlist.db import DigestRun, get_session, init_db
+from readurlist.rank.run import _existing_digest_run, _record_digest_run
 
 
 def test_digest_run_row_inserted_once(tmp_path):

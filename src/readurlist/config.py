@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     model_ingest: str = "openai/gpt-oss-120b"
 
-    database_url: str = "sqlite:///./data/second_read.db"
+    database_url: str = "sqlite:///./data/readurlist.db"
 
     digest_hour: int = 8
 

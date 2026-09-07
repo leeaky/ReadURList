@@ -5,12 +5,12 @@ import logging
 
 from telegram import Bot
 
-from second_read.config import Settings
-from second_read.db import Item, get_session
-from second_read.ingest import INGEST_PENDING_BODY, INGEST_READY
-from second_read.ingest.summarize import summarize_article
-from second_read.llm.base import LLMProvider
-from second_read.tags.vocab import load_vocabulary
+from readurlist.config import Settings
+from readurlist.db import Item, get_session
+from readurlist.ingest import INGEST_PENDING_BODY, INGEST_READY
+from readurlist.ingest.summarize import summarize_article
+from readurlist.llm.base import LLMProvider
+from readurlist.tags.vocab import load_vocabulary
 
 logger = logging.getLogger(__name__)
 

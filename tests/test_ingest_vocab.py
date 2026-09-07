@@ -1,6 +1,6 @@
-from second_read.config import Settings
-from second_read.db import Item, get_session, init_db
-from second_read.ingest import ingest_url
+from readurlist.config import Settings
+from readurlist.db import Item, get_session, init_db
+from readurlist.ingest import ingest_url
 
 
 class CaptureLLM:
@@ -38,7 +38,7 @@ def test_ingest_url_sees_existing_subjects(tmp_path, monkeypatch):
         session.close()
 
     monkeypatch.setattr(
-        "second_read.ingest.extract_article",
+        "readurlist.ingest.extract_article",
         lambda url: ("Hint", "Body text " * 40),
     )
     settings = Settings(

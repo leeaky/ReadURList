@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
-from second_read.db import DailyPick, Item, get_session, init_db
-from second_read.rank.run import persist_ranking
+from readurlist.db import DailyPick, Item, get_session, init_db
+from readurlist.rank.run import persist_ranking
 
 
 def test_persist_ranking_writes_picks_and_respects_read(tmp_path):

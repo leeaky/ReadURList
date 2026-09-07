@@ -1,7 +1,7 @@
 """Copy V1 SQLite items into Postgres (Supabase).
 
 Usage:
-  python -m scripts.migrate_sqlite ./data/second_read.db
+  python -m scripts.migrate_sqlite ./data/readurlist.db
 
 Requires DATABASE_URL in the environment pointing at Postgres.
 """
@@ -13,8 +13,8 @@ import sqlite3
 import sys
 from pathlib import Path
 
-from second_read.config import get_settings
-from second_read.db import Item, get_session, init_db
+from readurlist.config import get_settings
+from readurlist.db import Item, get_session, init_db
 
 
 def migrate(sqlite_path: Path) -> int:

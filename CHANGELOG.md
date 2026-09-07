@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Worker CLI is `readurlist` / `readurlist-digest` (Python package `readurlist`).
 - Ranking no longer omits tag-overlap near-duplicates or writes `similar_to_item_id`. Picks use demand, recency, path novelty, and priority only; keywords stay on cards as display.
 - All and Organize page through Supabase in 1000-row windows so the library cannot silently truncate.
 - Clusters browse is gone. Topics (by subject) is the grouping; ranking no longer uses cluster centrality (weights 0.45 / 0.20 / 0.20 / 0.15).
@@ -18,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Edit can send a completed item back to Unfetched (clears the body, queues Groq fill-in).
 - Product center from claim-connection pings to **capture → snapshot → daily ranked reads**.
 - Ingest output is a 2–4 sentence snapshot plus subject, topics, keywords, and priority.
-- Persistence target is **Supabase Postgres**; worker stays on the always-on NUC.
+- Persistence target is **Supabase Postgres**; worker stays on a self-hosted always-on host.
 - Groq chat retries on 429/5xx during bulk ingest.
 - Unfetched splits needs-text vs saved-for-fill-in; paste form closes on save; stubs can be deleted after confirm.
 - Corpus cards can overwrite headline, description, subject, and topics when ingest captured the wrong page.
@@ -26,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Skip / restore: leave the ranking queue without marking read. Cards and the Telegram digest have Skip; All filters Unread, Stale 14+, Read, and Skipped. Organize lists the oldest unread items and puts count-1 labels first so they are easy to merge.
-- Fetch/extract failures save `pending_body` stubs; Unfetched page for paste/PDF; daily NUC Groq fill-in before digest.
+- Fetch/extract failures save `pending_body` stubs; Unfetched page for paste/PDF; daily worker Groq fill-in before digest.
 - Multi-URL paste in Telegram (sequential `n/N` snapshots).
 - Daily cluster + ranking job, `daily_picks`, Telegram digest with Mark read buttons (`/digest` to run now).
 - Next.js website (`web/`) on Vercel: Today, Unread, Topics, All, Unfetched, reading path, password gate, mark read.

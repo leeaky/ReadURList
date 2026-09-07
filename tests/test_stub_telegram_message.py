@@ -1,4 +1,4 @@
-from second_read.bot.handlers import format_stub_ack
+from readurlist.bot.handlers import format_stub_ack
 
 
 def test_format_stub_ack_includes_unfetched_link():

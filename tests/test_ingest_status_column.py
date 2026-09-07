@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, text
 
-from second_read.db import Item, get_session, init_db
+from readurlist.db import Item, get_session, init_db
 
 
 def test_sqlite_migration_ingest_status_not_null(tmp_path):

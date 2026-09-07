@@ -1,5 +1,5 @@
-from second_read.db import Item, get_session, init_db
-from second_read.tags.vocab import apply_tag_maps, load_vocabulary
+from readurlist.db import Item, get_session, init_db
+from readurlist.tags.vocab import apply_tag_maps, load_vocabulary
 
 
 def _ready(url: str, subject: str, topics: list[str], **kwargs) -> Item:

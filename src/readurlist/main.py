@@ -3,10 +3,10 @@ from __future__ import annotations
 import logging
 import sys
 
-from second_read.bot import build_app
-from second_read.config import get_settings
-from second_read.db import init_db
-from second_read.llm import GroqProvider
+from readurlist.bot import build_app
+from readurlist.config import get_settings
+from readurlist.db import init_db
+from readurlist.llm import GroqProvider
 
 
 def main() -> None:

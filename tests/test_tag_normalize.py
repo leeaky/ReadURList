@@ -1,4 +1,4 @@
-from second_read.tags.normalize import canonicalize_label, should_consolidate
+from readurlist.tags.normalize import canonicalize_label, should_consolidate
 
 
 def test_canonicalize_keeps_existing_spelling():

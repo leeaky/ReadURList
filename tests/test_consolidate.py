@@ -1,6 +1,6 @@
-from second_read.config import Settings
-from second_read.db import Item, get_session, init_db
-from second_read.tags.consolidate import (
+from readurlist.config import Settings
+from readurlist.db import Item, get_session, init_db
+from readurlist.tags.consolidate import (
     consolidation_prompt,
     maps_from_payload,
     maybe_consolidate_tags,

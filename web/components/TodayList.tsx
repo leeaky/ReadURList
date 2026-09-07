@@ -18,7 +18,7 @@ export function TodayList({
   if (picks.length === 0) {
     return (
       <p className="empty">
-        No ranked picks yet. Run the daily job on the NUC (`second-read-digest` or /digest).
+        No ranked picks yet. Run the daily job (`readurlist-digest` or /digest).
       </p>
     );
   }

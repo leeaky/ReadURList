@@ -1,6 +1,6 @@
 import pytest
 
-from second_read.ingest.extract import ExtractError, extract_article
+from readurlist.ingest.extract import ExtractError, extract_article
 
 
 def test_short_html_raises_extract_error_with_title(monkeypatch):
@@ -9,7 +9,7 @@ def test_short_html_raises_extract_error_with_title(monkeypatch):
     def fake_fetch(url: str, timeout: float) -> str:
         return html
 
-    monkeypatch.setattr("second_read.ingest.extract._fetch_html", fake_fetch)
+    monkeypatch.setattr("readurlist.ingest.extract._fetch_html", fake_fetch)
 
     with pytest.raises(ExtractError) as excinfo:
         extract_article("https://example.com/paywall")

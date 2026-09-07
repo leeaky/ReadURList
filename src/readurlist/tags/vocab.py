@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from second_read.db import Item, get_session
-from second_read.tags.normalize import canonicalize_label, unique_labels
+from readurlist.db import Item, get_session
+from readurlist.tags.normalize import canonicalize_label, unique_labels
 
 
 @dataclass

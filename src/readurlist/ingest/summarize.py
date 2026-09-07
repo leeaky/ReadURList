@@ -4,9 +4,9 @@ import json
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from second_read.llm.base import LLMProvider
-from second_read.prompts import INGEST_SCHEMA, INGEST_SYSTEM
-from second_read.tags.normalize import canonicalize_label, unique_labels
+from readurlist.llm.base import LLMProvider
+from readurlist.prompts import INGEST_SCHEMA, INGEST_SYSTEM
+from readurlist.tags.normalize import canonicalize_label, unique_labels
 
 
 @dataclass
