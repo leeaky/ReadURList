@@ -7,7 +7,7 @@ import {
   type DeleteUnfetchedState,
   type SubmitArticleBodyState,
 } from "@/app/actions";
-import { hasExtractedBody } from "@/lib/unfetched";
+import { hasExtractedBody, unfetchedIdleActionsDisabled } from "@/lib/unfetched";
 import type { ItemRow } from "@/lib/supabase";
 
 function formatDate(iso: string | null) {
@@ -45,6 +45,7 @@ export function UnfetchedCard({ item }: { item: ItemRow }) {
 
   const status = hasBody ? "Saved for today’s fill-in" : "Needs article text";
   const open = confirming || mode !== "idle";
+  const idleActionsDisabled = unfetchedIdleActionsDisabled(mode);
   const cardClass = hasBody
     ? open
       ? "article-card is-queued is-open"
@@ -137,21 +138,28 @@ export function UnfetchedCard({ item }: { item: ItemRow }) {
           <div className="article-actions">
             <button
               type="button"
-              className={hasBody ? "btn btn-secondary" : "btn btn-primary"}
-              aria-pressed={mode === "paste"}
+              className={hasBody || idleActionsDisabled ? "btn btn-secondary" : "btn btn-primary"}
+              aria-pressed={idleActionsDisabled ? undefined : mode === "paste"}
               onClick={startPaste}
+              disabled={idleActionsDisabled}
             >
               Paste text
             </button>
             <button
               type="button"
               className="btn btn-secondary"
-              aria-pressed={mode === "pdf"}
+              aria-pressed={idleActionsDisabled ? undefined : mode === "pdf"}
               onClick={startPdf}
+              disabled={idleActionsDisabled}
             >
               Attach PDF
             </button>
-            <button type="button" className="btn btn-secondary" onClick={startDelete}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={startDelete}
+              disabled={idleActionsDisabled}
+            >
               Delete
             </button>
           </div>

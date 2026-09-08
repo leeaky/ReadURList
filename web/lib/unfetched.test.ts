@@ -4,6 +4,7 @@ import {
   hasExtractedBody,
   partitionUnfetched,
   unfetchedDeleteGuard,
+  unfetchedIdleActionsDisabled,
 } from "./unfetched.ts";
 
 describe("hasExtractedBody", () => {
@@ -37,6 +38,17 @@ describe("partitionUnfetched", () => {
       saved.map((i) => i.id),
       [2, 4],
     );
+  });
+});
+
+describe("unfetchedIdleActionsDisabled", () => {
+  it("is false while the card is idle so Paste, Attach, and Delete stay usable", () => {
+    assert.equal(unfetchedIdleActionsDisabled("idle"), false);
+  });
+
+  it("is true after Paste text or Attach PDF expands the fill-in form", () => {
+    assert.equal(unfetchedIdleActionsDisabled("paste"), true);
+    assert.equal(unfetchedIdleActionsDisabled("pdf"), true);
   });
 });
 

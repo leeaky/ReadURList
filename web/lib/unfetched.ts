@@ -25,3 +25,9 @@ export function unfetchedDeleteGuard(
   }
   return null;
 }
+
+export type UnfetchedFillMode = "idle" | "paste" | "pdf";
+
+export function unfetchedIdleActionsDisabled(mode: UnfetchedFillMode): boolean {
+  return mode !== "idle";
+}
