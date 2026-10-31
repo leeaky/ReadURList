@@ -102,14 +102,16 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 - **Depends on:** Stage 0
 - **Produces:** saved links in the database, each waiting to be read by stage 2; a reply in Telegram per link.
 - **Terms:** Worker, Allowlist, Snapshot
-- **Status:** not started
+- **Status:** done
 - **Changed:** 2026-10-31 — now depends on stage 0 (R-0009); no Deploy task, since this stage changes nothing.
 - **Tasks:**
-  - [ ] (a) Pasting links into the bot saves each one and replies with its summary, or with a "couldn't fetch" note and a link to fill it in.
+  - [x] (a) Pasting links into the bot saves each one and replies with its summary, or with a "couldn't fetch" note and a link to fill it in.
     Detail: Telegram long polling on the worker; allowlist by numeric user id; sequential n/N replies (README §Using the bot).
-  - [ ] (b) Messages from anyone else get no reply.
-    Detail: allowlist check before any handler runs.
+  - [x] (b) Messages from anyone else get no reply.
+    Detail: allowlist check before any handler runs. Covered by `tests/test_allowlist.py` (added 2026-11-01; there was no test for it).
+- **How we know:** 4 links sent to the dev bot gave 4 saved items, 2 with a summary and 2 (paywalled) waiting on Unfetched, matching the check-log prediction; a message from any other account gets 0 replies and saves 0 items.
 - **Issues:** none
+- **Verified:** 2026-11-01 — dev worker (`C:\dev\ReadURList`, PID 26268) with the dev bot and local database; owner sent 4 links ("sent 4", "2 paywalled"); `psql` on the local database: items 19 and 22 `ready` with a summary (364 and 427 characters), items 20 and 21 `pending_body` with no text. `uv run pytest -q tests/test_allowlist.py`: 2 passed (other user: no reply, nothing saved; owner: saved and answered); full suite 64 passed.
 
 ### Stage 2 — Read each page safely
 - **What gets built:** Each saved link is fetched and its text extracted; a language model with no tools reads it and must answer in a fixed form (summary, subject, topics, keywords, priority). Its answer is checked before it is stored. Pages that can't be fetched become placeholders for stage 3.
