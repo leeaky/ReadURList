@@ -62,29 +62,30 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 ## Stages
 
 ### Stage 0 — Separate dev from live
-- **What gets built:** The live worker runs from its own copy of the code on main, and dev gets its own Telegram bot, Supabase database and keys; the website's production version builds only from main, and previews use dev data. Only you move changes to live.
+- **What gets built:** The live worker runs from its own copy of the code on main, and dev gets its own Telegram bot, a Supabase database running on this PC, and its own keys; the website's production version builds only from main, previews never get live keys, and website changes are checked in a browser on this PC. Only you move changes to live.
 - **Why:** On 2026-10-31 the build chat changed the environment the live worker was running from, because dev and live were one folder with one set of keys and one database; agents must build and test where live can't be reached (R-0009 §Decision, §What "apart" means, §Why).
 - **Depends on:** nothing
 - **Produces:** a dev folder, bot and database agents can use freely; a live folder, bot and database only you change; for every later stage, a Deploy task you run.
 - **Terms:** Live, Dev, Checkout, Deploy, Migration, Backup, Preview
 - **Status:** in progress
+- **Changed:** 2026-11-01 — the dev database moves from a second Supabase project to a local copy of Supabase on this PC, because the free plan allows only 2 active projects (clipr and readurlist); see B1. So (c) becomes a build-chat task, and (e) no longer gives previews a database: you check website changes on this PC instead of on a preview link.
 - **Tasks:**
   - [x] (a) You: make a separate live copy of the code on main and point the worker's scheduled task at it.
     Detail: clone to `C:/apps/readurlist`; run `uv sync` there; copy your live `.env` there yourself; in Task Scheduler change "ReadURList Worker" to run `C:\apps\readurlist\docs\run-worker-hidden.vbs` with Start in `C:\apps\readurlist`; stop the worker running from `C:/dev/ReadURList`, start the task, and confirm exactly one `readurlist.exe` runs, from `C:\apps\readurlist\.venv`. After this, `C:/dev/ReadURList` is dev only.
   - [x] (b) You: create a second Telegram bot for dev.
     Detail: BotFather `/newbot` (e.g. `readurlist_dev_bot`); its token goes only in the dev `.env`; same `TELEGRAM_USER_ID`; `/start` it once. Profile picture: `docs/dev-bot-logo.png` (owner, 2026-10-31: "i used this as the logo for the dev"; stored in the repo on the owner's "A").
-  - [ ] (c) You: create a dev Supabase project.
-    Detail: new project; apply every file in `supabase/migrations/` in order; its session-pooler `DATABASE_URL` goes in the dev `.env`, its `SUPABASE_URL` and service key in `web/.env.local`.
+  - [ ] (c) The dev database runs on this PC as a local copy of Supabase, with the same tables as live.
+    Detail: Supabase command-line tool through `npx` at a pinned version (no global install); `supabase init` adds `supabase/config.toml`; `supabase start` runs it in Docker (Docker 29.7.2 is installed and running, checked 2026-11-01) and applies every file in `supabase/migrations/` in order; expect the 3 tables `items`, `daily_picks`, `digest_runs`, empty. Docker must be running whenever dev runs. Owner, 2026-11-01: "A: local on this PC".
   - [ ] (d) You: switch this folder's two key files to the dev bot and dev database, with a separate dev Groq key.
-    Detail: after (a)–(c): `C:/dev/ReadURList/.env` gets the dev bot token, dev `DATABASE_URL` and a dev Groq key; `web/.env.local` gets the dev `SUPABASE_URL`, service key and a dev `SITE_PASSWORD`. No live value stays in `C:/dev/ReadURList`. Agents don't open these files (R-0002); you confirm in chat when done. Owner, 2026-10-31: "In stage 0, include switching this folder's .env and web/.env.local to the dev bot and dev database".
-  - [ ] (e) You: set the website so production builds only from main and previews use the dev database.
-    Detail: Vercel Settings → Git → Production Branch = `main`; Environment Variables: Production = live Supabase, Preview = dev Supabase and dev `SITE_PASSWORD`.
+    Detail: after (a)–(c): `C:/dev/ReadURList/.env` gets the dev bot token, the local `DATABASE_URL` and a dev Groq key; `web/.env.local` gets the local `SUPABASE_URL`, local service key and a dev `SITE_PASSWORD`. The local values come from `npx supabase status`, which you run and copy from yourself. No live value stays in `C:/dev/ReadURList`. Agents don't open these files (R-0002); you confirm in chat when done. Owner, 2026-10-31: "In stage 0, include switching this folder's .env and web/.env.local to the dev bot and dev database".
+  - [ ] (e) You: set the website so production builds only from main and previews never get live keys.
+    Detail: Vercel Settings → Git → Production Branch = `main`; Environment Variables: the live Supabase keys and `SITE_PASSWORD` ticked for Production only, not Preview or Development. Previews can't reach the database on this PC, so they show no data; website changes are checked with `npm run dev` in `web/` against the local database.
   - [ ] (f) The dev database gets made-up sample items so lists can be tested without live data.
     Detail: a seed script with invented titles, subjects and short invented text, never copied from the live database (R-0003; R-0009 §What "apart" means). Runs only against the dev `DATABASE_URL`.
   - [ ] (g) Tests run in the dev folder without touching anything live.
     Detail: only after (a)–(d): `uv sync --extra dev` in `C:/dev/ReadURList`, then `uv run pytest -q`, and `npm test` in `web/`.
   - [ ] (h) The README explains how dev and live are set up and how you deploy.
-    Detail: README §Worker gains a "Dev and live" section: the two folders, two bots, two databases, Vercel production vs preview, and the deploy order (backup → migrate live → merge to main → `git pull`, `uv sync`, restart the task → check).
+    Detail: README §Worker gains a "Dev and live" section: the two folders, two bots, the live database and the local dev database (start Docker, `npx supabase start`), Vercel production only from main, and the deploy order (backup → migrate live → merge to main → `git pull`, `uv sync`, restart the task → check).
   - [x] (i) Deploy (you): confirm only one worker runs, from the live copy, and the live bot still answers /start.
     Detail: Task Manager, or `Get-CimInstance Win32_Process -Filter "name='readurlist.exe'"`; ExecutablePath under `C:\apps\readurlist`.
 - **How we know:** exactly 1 worker process runs, and its path is under the live copy (before stage 0 there were 2, both from the dev folder); the live bot answers /start.
@@ -277,7 +278,17 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 
 ## Blocks
 
-None.
+### B1 — Stage 0: no room for a dev Supabase project (2026-11-01)
+- **What is blocked:** task (c), creating a dev Supabase project.
+- **Why it happened:** Supabase's free plan allows 2 active projects; you have 2, clipr and readurlist. Paused projects don't count.
+- **Terms, as a reminder:** Docker — a program that runs a self-contained copy of a service on this PC; here, all of Supabase (database plus the interface the website reads through), not just the database.
+- **Options:**
+  - **A.** A local copy of Supabase on this PC, in Docker → free and fully apart; previews lose their data, so website changes are checked on this PC.
+  - **B.** Pause clipr while readurlist is built → plan unchanged; clipr offline until restored, swap each time it's needed.
+  - **C.** Supabase Pro plan → plan unchanged; $25/month plus about $10/month per project.
+  - **D.** Dev tables inside the live project → not apart; ruled out by R-0009.
+- **Recommendation:** A, because it's free, apart from live, and doesn't depend on clipr or a bill.
+- **Decision:** owner, 2026-11-01: "A: local on this PC". Changes stage 0 tasks (c), (d), (e) and (h).
 
 ## Open questions
 
@@ -301,7 +312,7 @@ None.
 **Dev** — where agents build and test: this folder, the dev bot, the dev database and website previews · R-0009 · nothing done there reaches you until you deploy.
 **Live** — what you use every day: the worker running from the live copy, your real bot, the real database and the production website · R-0009 · agents never touch it.
 **Migration** — a file that changes the database's shape (e.g. adds a column) · README §Worker; R-0009 §What "apart" means · reaches live only when you apply it at deploy.
-**Preview** — a test build of the website for a branch, on its own address, using dev data · R-0009 §What "apart" means · how you look at a website change before it goes live.
+**Preview** — a test build of the website for a branch, on its own address · R-0009 §What "apart" means · here it gets no database keys (the dev database is on this PC), so you look at a website change on this PC before it goes live.
 **Allowlist** — the one Telegram account the bot listens to; everyone else is ignored · README §Telegram bot setup · keeps the app single-user.
 **Daily job** — the run once a day that reads filled-in pages, scores the pile and builds the list · README §Worker · stages 6 and 8 hang off it.
 **Effort label** — new: short or long, with an estimated reading time · Brainstorm §What isn't working 3 · drives the two sections.
