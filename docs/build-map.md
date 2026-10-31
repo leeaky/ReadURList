@@ -144,16 +144,18 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 - **Depends on:** Stage 2
 - **Produces:** previously unfetched items that become ready.
 - **Terms:** Stub, Unfetched, Tripwire
-- **Status:** not started
+- **Status:** in progress
 - **Changed:** 2026-10-31 — Deploy task added for the owner (R-0009 §On the map); built only in dev from now on (stage 0).
 - **Tasks:**
-  - [ ] (a) Pasted text or an uploaded PDF goes through the same safe reading as a fetched page, including the tripwire scan.
-    Detail: fill-in text must hit the stage 2 quarantined path, not a separate unchecked one.
-  - [ ] (b) Pages held by the tripwire appear here marked "held", with release and delete.
-    Detail: from the stage 2 (e) decision, owner 2026-10-31.
+  - [x] (a) Pasted text or an uploaded PDF goes through the same safe reading as a fetched page, including the tripwire scan.
+    Detail: fill-in text must hit the stage 2 quarantined path, not a separate unchecked one. Built with stage 2: `complete.py` scans pasted text before reading (a match becomes `held`), and `summarize_article` cleans, wraps and checks it like any page. Test: `test_tripwire.py::test_suspicious_pasted_text_is_held_too`.
+  - [x] (b) Pages held by the tripwire appear here marked "held", with release and delete.
+    Detail: from the stage 2 (e) decision, owner 2026-10-31. Built with stage 2: Held section on Unfetched (`HeldCard`, `releaseHeldItem`, `partitionUnfetched`). Tests: `web/lib/unfetched.test.ts`.
   - [ ] (c) Deploy (you): merge to main so the website rebuilds, then check Unfetched still lists your unfetched links and shows any held pages.
     Detail: merge the stage's pull request; Vercel builds production from `main`; open `/unfetched` on the live site.
+- **How we know:** pasted text with a planted instruction is held with 0 model calls, and a released one is read (same local-database run as stage 2).
 - **Issues:** none
+- **Verified:** 2026-11-01 — see stage 2 Verified (item 23 was pasted text, not a fetched page). Deploy (c) ships in the same pull request as stage 2. Not checked: the Held section in a browser.
 
 ### Stage 4 — Tag each item by effort
 - **What gets built:** Each item gets an effort label, short or long, with an estimated reading time, so a dense paper is never offered for a tram ride.
