@@ -1,6 +1,6 @@
 # readurlist — Build Map
 
-**Status:** signed off 2026-10-31
+**Status:** building (signed off 2026-10-31)
 
 **Sources (the authority for this map):**
 - **Brainstorm** = `C:/dev/ai-factory/knowledge/brainstorms/2026-10-30-readurlist.md` (ai-factory `main`, commit `41c1e16`). Cited as "Brainstorm §x".
@@ -67,7 +67,7 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 - **Depends on:** nothing
 - **Produces:** a dev folder, bot and database agents can use freely; a live folder, bot and database only you change; for every later stage, a Deploy task you run.
 - **Terms:** Live, Dev, Checkout, Deploy, Migration, Backup, Preview
-- **Status:** in progress
+- **Status:** done
 - **Changed:** 2026-11-01 — the dev database moves from a second Supabase project to a local copy of Supabase on this PC, because the free plan allows only 2 active projects (clipr and readurlist); see B1. So (c) becomes a build-chat task, and (e) no longer gives previews a database: you check website changes on this PC instead of on a preview link.
 - **Tasks:**
   - [x] (a) You: make a separate live copy of the code on main and point the worker's scheduled task at it.
@@ -78,7 +78,7 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
     Detail: Supabase command-line tool through `npx` at a pinned version (no global install); `supabase init` adds `supabase/config.toml`; `supabase start` runs it in Docker (Docker 29.7.2 is installed and running, checked 2026-11-01) and applies every file in `supabase/migrations/` in order; expect the 3 tables `items`, `daily_picks`, `digest_runs`, empty. Docker must be running whenever dev runs. Owner, 2026-11-01: "A: local on this PC".
   - [x] (d) You: switch this folder's two key files to the dev bot and dev database, with a separate dev Groq key.
     Detail: after (a)–(c): `C:/dev/ReadURList/.env` gets the dev bot token, the local `DATABASE_URL` and a dev Groq key; `web/.env.local` gets the local `SUPABASE_URL`, local service key and a dev `SITE_PASSWORD`. The local values come from `npx supabase status`, which you run and copy from yourself. No live value stays in `C:/dev/ReadURList`. Agents don't open these files (R-0002); you confirm in chat when done. Owner, 2026-10-31: "In stage 0, include switching this folder's .env and web/.env.local to the dev bot and dev database".
-  - [ ] (e) You: set the website so production builds only from main and previews never get live keys.
+  - [x] (e) You: set the website so production builds only from main and previews never get live keys.
     Detail: Vercel Settings → Git → Production Branch = `main`; Environment Variables: the live Supabase keys and `SITE_PASSWORD` ticked for Production only, not Preview or Development. Previews can't reach the database on this PC, so they show no data; website changes are checked with `npm run dev` in `web/` against the local database.
   - [x] (f) The dev database gets made-up sample items so lists can be tested without live data.
     Detail: a seed script with invented titles, subjects and short invented text, never copied from the live database (R-0003; R-0009 §What "apart" means). Runs only against the dev `DATABASE_URL`. Built as `supabase/seed.sql`, loaded by `npx supabase@2.122.0 db reset --local`; links use the reserved example.com / example.org domains.
@@ -94,6 +94,7 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
   2026-11-01 — (c): `npx supabase@2.122.0 init` then `start`: all 5 migrations applied in order; `docker exec supabase_db_ReadURList psql … information_schema.tables`: `daily_picks` 0, `digest_runs` 0, `items` 0 rows; 12 `supabase_` containers running.
   2026-11-01 — (d): owner confirmed "(d) done"; the build chat's check of which hosts the key files point at was refused by the permission system, so it rests on the owner's word (R-0002). (g): `uv sync --extra dev` then `uv run pytest -q`: 62 passed. The dev `.venv` had a leftover `sqlalchemy-2.0.52.dist-info` with no RECORD file that made every `uv run` re-sync; removed it, then `uv sync --extra dev` reports "Checked 48 packages" with no changes. `web/`: `npm ci`, `npm run build`: built, 10 routes, no errors.
   2026-11-01 — (f): `npx supabase@2.122.0 db reset --local`: migrations plus "Seeding data from supabase/seed.sql"; `psql` counts: 18 items (12 ready to read, 3 of them over 3,450 words; 3 waiting on Unfetched; 2 read; 1 skipped), 0 links outside example.com / example.org. (h): README §Worker → "Dev and live" (table of the two setups, dev database commands, deploy order); README §Tests now says dev folder only, with `uv run pytest -q` and the website build.
+  2026-11-01 — (e): owner's Vercel screenshots: Settings → Environments shows Production tracking `main`, Preview "All unassigned git branches"; Settings → Environment Variables lists exactly `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_URL`, `SITE_PASSWORD`, each scoped to Production only.
 
 ### Stage 1 — Save links from Telegram
 - **What gets built:** You paste one or more links into a private Telegram bot from any device; it saves them and replies with a short summary so you can see the save worked. Only your Telegram account is listened to.
