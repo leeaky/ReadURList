@@ -74,6 +74,9 @@ class Item(Base):
     skipped_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    restored_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
 
 class DailyPick(Base):
@@ -86,6 +89,8 @@ class DailyPick(Base):
     rank: Mapped[int] = mapped_column(Integer)
     score: Mapped[float] = mapped_column(Float)
     reason: Mapped[str] = mapped_column(Text)
+    subject_points: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    recency_points: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     item: Mapped[Item] = relationship()
 
@@ -143,6 +148,7 @@ def _migrate_sqlite(engine) -> None:
             "ingest_status": "ALTER TABLE items ADD COLUMN ingest_status VARCHAR(32) NOT NULL DEFAULT 'ready'",
             "skipped_at": "ALTER TABLE items ADD COLUMN skipped_at DATETIME",
             "word_count": "ALTER TABLE items ADD COLUMN word_count INTEGER",
+            "restored_at": "ALTER TABLE items ADD COLUMN restored_at DATETIME",
         }
         for name, sql in alters.items():
             if name not in columns:

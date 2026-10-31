@@ -98,3 +98,13 @@ export function isReadyItem(
 ): boolean {
   return row?.ingest_status === "ready";
 }
+
+/** Skip stamps the date; restore clears it and restarts recency from now (build map stage 5 (c)). */
+export function skipStateFields(
+  skipped: boolean,
+  now: Date,
+): { skipped_at: string } | { skipped_at: null; restored_at: string } {
+  return skipped
+    ? { skipped_at: now.toISOString() }
+    : { skipped_at: null, restored_at: now.toISOString() };
+}

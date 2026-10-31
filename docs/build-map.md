@@ -184,18 +184,20 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 - **Depends on:** Stages 2, 4
 - **Produces:** a score per unread item with its reasons, and yesterday's scores to compare against, for stage 6.
 - **Terms:** Unread queue, Score, Ranking weights, Subject demand, Recency, Fallen off
-- **Status:** not started
+- **Status:** in progress
 - **Changed:** 2026-10-31 — Deploy task added for the owner (R-0009 §On the map); built only in dev from now on (stage 0). Deploy order set by the owner the same day: backup and migrate live before merging.
 - **Tasks:**
-  - [ ] (a) Each unread item's score breaks into a few named parts you can read.
-    Detail: two parts: subject demand 65, recency 35 (out of 100); path novelty and model priority dropped. Owner, 2026-10-31: "A" (options were: drop model priority only, 50/25/25 / keep subject demand and recency only, 65/35 / keep all four). Known trade-off, accepted with the choice: nothing stops several picks like ones just read. Keep scoring deterministic so reasons stay true. Each pick gets a one-line reason naming its biggest part, plus the points per part; each fallen-off link gets its main cause (read / skipped / outscored by newer saves / subject already has two picks) plus points before and after (Q1, owner 2026-10-31).
-  - [ ] (b) The tool remembers yesterday's list so it can say why something left it.
-    Detail: store each day's picks and scores.
-  - [ ] (c) A restored item counts as freshly saved: its recency starts again from the day you restored it.
-    Detail: recency uses the later of saved date and restored date. Owner, 2026-10-31: "I would suggest if restored, the date restarts to restoration date".
+  - [x] (a) Each unread item's score breaks into a few named parts you can read.
+    Detail: two parts: subject demand 65, recency 35 (out of 100); path novelty and model priority dropped. Owner, 2026-10-31: "A" (options were: drop model priority only, 50/25/25 / keep subject demand and recency only, 65/35 / keep all four). Known trade-off, accepted with the choice: nothing stops several picks like ones just read. Keep scoring deterministic so reasons stay true. Each pick gets a one-line reason naming its biggest part, plus the points per part; each fallen-off link gets its main cause (read / skipped / outscored by newer saves / subject already has two picks) plus points before and after (Q1, owner 2026-10-31). Built: `rank/score.py` rebuilt: subject = round(65 × this subject's unread count ÷ the biggest subject's), recency = round(35 ÷ (1 + days)); reason e.g. "You keep saving Gardening: 4 unread (subject 43 + recency 34 = 77)" or "Restored today (subject 22 + recency 35 = 57)"; two-per-subject cap kept. Fallen-off causes are built in stage 6 from these stored parts. Today's explainer text on the website now names the two parts. Tests: `test_rank.py`.
+  - [x] (b) The tool remembers yesterday's list so it can say why something left it.
+    Detail: store each day's picks and scores. Built: `daily_picks` gains `subject_points` and `recency_points` (migration `20261102000000_score_parts.sql`, add-only); rebuilding today never touches earlier days. Tests: `test_score_history.py`.
+  - [x] (c) A restored item counts as freshly saved: its recency starts again from the day you restored it.
+    Detail: recency uses the later of saved date and restored date. Owner, 2026-10-31: "I would suggest if restored, the date restarts to restoration date". Built: `items.restored_at` (same migration), set by Restore on the website (`skipStateFields`); the saved date itself is kept. Tests: `test_rank.py::test_restored_item_counts_from_the_restore_date`, `web/lib/item-edit.test.ts`.
   - [ ] (d) Deploy (you): back up the live database and apply this stage's database change, then merge to main, update and restart the live worker, and check the next list's reasons name only subject and recency.
-    Detail: backup → migration → merge (website rebuilds; restore resets the date) → worker update as in stage 2 → check after the next daily run or `/digest`.
+    Detail: backup and migration with `scripts/live-db-deploy.ps1 20261102000000_score_parts.sql` → merge (website rebuilds; restore resets the date) → worker update as in stage 2 → check after the next daily run or `/digest`.
+- **How we know:** on the local database every pick's reason names subject or recency and its two parts add up to its score (5 of 5), and an item saved 15 days ago, once restored, rises into the list at #5 with recency 35 of 35.
 - **Issues:** none
+- **Verified:** 2026-11-01 — `uv run pytest -q`: 102 passed; `web/`: `npm test` 68 passed, `npm run build` clean. Local database: `migration up --local` applied `20261102000000_score_parts.sql`; `persist_ranking()`: 5 picks, e.g. "You keep saving Programming: 6 unread (subject 65 + recency 34 = 99)"; set `restored_at` on item 12 (Walking, 15 days old) → it entered at #5, "Restored today (subject 22 + recency 35 = 57)"; `daily_picks` for 2026-11-01: 5 rows, 5 with parts. Not checked: Restore clicked in a browser (needs the dev site password).
 
 ### Stage 6 — Build the day's list: short, long, fallen off
 - **What gets built:** Each day the tool picks a short section and a long section from the scored pile, and a list of links that were on yesterday's list but aren't today, each with a reason.

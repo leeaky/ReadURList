@@ -10,7 +10,10 @@ describe("ranking copy", () => {
   it("explains Today ranking without scores or clusters", () => {
     assert.match(RANKING_TODAY_BLURB, /subject you keep saving/i);
     assert.match(RANKING_TODAY_BLURB, /recency/i);
-    assert.match(RANKING_TODAY_BLURB, /reading path/i);
+    assert.match(RANKING_TODAY_BLURB, /65/);
+    assert.match(RANKING_TODAY_BLURB, /35/);
+    assert.match(RANKING_TODAY_BLURB, /restored/i);
+    assert.doesNotMatch(RANKING_TODAY_BLURB, /reading path/i);
     assert.doesNotMatch(RANKING_TODAY_BLURB, /0\.45|score/i);
     assert.doesNotMatch(RANKING_TODAY_BLURB, /cluster/i);
   });
