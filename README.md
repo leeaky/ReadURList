@@ -199,7 +199,7 @@ It applies every file in `supabase/migrations/`. `npx supabase@2.122.0 db reset 
 1. Back up the live database (see [Backup](#backup)).
 2. Apply the new file(s) in `supabase/migrations/` to live. Migrations must work with the code already live: add, never rename or drop, in the same change.
 3. Merge to `main`. Vercel deploys the website.
-4. In `C:\apps\ReadURList`: `git pull`, `uv sync`, then restart the "ReadURList Worker" task.
+4. In `C:\apps\ReadURList`: `git pull`; stop the worker with `Stop-Process -Id <pid>` (find it with `Get-CimInstance Win32_Process -Filter "name='readurlist.exe'"`; "End" in Task Scheduler stops only the launcher); `uv sync`; then **Run** the "ReadURList Worker" task and check exactly one `readurlist.exe` runs, from `C:\apps\ReadURList`.
 5. Check the change works on the live bot or website.
 
 Without a database change, skip steps 1–2.
