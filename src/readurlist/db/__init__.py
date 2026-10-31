@@ -91,8 +91,24 @@ class DailyPick(Base):
     reason: Mapped[str] = mapped_column(Text)
     subject_points: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     recency_points: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    section: Mapped[Optional[str]] = mapped_column(String(8), nullable=True)
 
     item: Mapped[Item] = relationship()
+
+
+class FallenOff(Base):
+    """A link on the previous day's list that isn't on this one (build map stage 6)."""
+
+    __tablename__ = "fallen_off"
+    __table_args__ = (UniqueConstraint("run_on", "item_id", name="uq_fallen_off_run_item"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    run_on: Mapped[date] = mapped_column(Date, index=True)
+    item_id: Mapped[int] = mapped_column(ForeignKey("items.id", ondelete="CASCADE"), index=True)
+    # read | skipped | outscored | subject_full | gone
+    cause: Mapped[str] = mapped_column(String(16))
+    points_before: Mapped[float] = mapped_column(Float)
+    points_after: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
 
 class DigestRun(Base):

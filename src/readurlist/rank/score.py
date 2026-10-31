@@ -1,12 +1,19 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Sequence
+
+from readurlist.effort import effort
 
 # Build map stage 5: two parts out of 100 (owner, 2026-10-31: "A").
 SUBJECT_POINTS = 65
 RECENCY_POINTS = 35
+
+# Stage 6: 3 short + 1 long (owner, 2026-10-31: "A"); at most two per subject.
+SHORT_PICKS = 3
+LONG_PICKS = 1
+PER_SUBJECT = 2
 
 
 @dataclass
@@ -20,6 +27,7 @@ class RankItem:
     priority: int
     skipped_at: datetime | None = None
     restored_at: datetime | None = None
+    word_count: int | None = None
 
 
 @dataclass
@@ -30,6 +38,16 @@ class Pick:
     rank: int = 0
     subject_points: int = 0
     recency_points: int = 0
+    section: str = "short"
+
+
+@dataclass
+class DayList:
+    picks: list[Pick]
+    # Every unread item's score, picked or not (for "points after" on fallen-off links).
+    scores: dict[int, Pick] = field(default_factory=dict)
+    # Unread items that scored into their section but lost out to the per-subject cap.
+    capped: set[int] = field(default_factory=set)
 
 
 def _norm(text: str) -> str:
@@ -82,45 +100,51 @@ def _reason(item: RankItem, *, same_subject: int, age_days: float, subject: int,
     return f"{lead} (subject {subject} + recency {recency} = {subject + recency})"
 
 
-def score_unread(
-    items: Sequence[RankItem],
-    *,
-    now: datetime,
-    top_n: int = 5,
-) -> list[Pick]:
+def _section(item: RankItem) -> str:
+    # Unknown length (no word count) counts as short.
+    if item.word_count is None:
+        return "short"
+    return effort(item.word_count)[0]
+
+
+def build_day_list(items: Sequence[RankItem], *, now: datetime) -> DayList:
     unread = [i for i in items if i.read_at is None and i.skipped_at is None]
     counts = _subject_counts(unread)
     biggest = max(counts.values(), default=1)
 
-    scored: list[tuple[int, RankItem, int, int, str]] = []
+    scores: dict[int, Pick] = {}
     for item in unread:
         same = counts[_norm(item.subject)]
         age = _age_days(item, now)
         subject = round(SUBJECT_POINTS * same / biggest)
         recency = round(RECENCY_POINTS / (1.0 + age))
-        reason = _reason(item, same_subject=same, age_days=age, subject=subject, recency=recency)
-        scored.append((subject + recency, item, subject, recency, reason))
-
-    scored.sort(key=lambda row: (-row[0], row[1].id))
-
-    picks: list[Pick] = []
-    subject_counts: dict[str, int] = {}
-
-    for total, item, subject, recency, reason in scored:
-        key = _norm(item.subject) or "misc"
-        if subject_counts.get(key, 0) >= 2:
-            continue
-        subject_counts[key] = subject_counts.get(key, 0) + 1
-        picks.append(
-            Pick(
-                item_id=item.id,
-                score=total,
-                reason=reason,
-                rank=len(picks) + 1,
-                subject_points=subject,
-                recency_points=recency,
-            )
+        scores[item.id] = Pick(
+            item_id=item.id,
+            score=subject + recency,
+            reason=_reason(item, same_subject=same, age_days=age, subject=subject, recency=recency),
+            subject_points=subject,
+            recency_points=recency,
+            section=_section(item),
         )
-        if len(picks) >= top_n:
-            break
-    return picks
+
+    by_id = {i.id: i for i in unread}
+    ordered = sorted(scores.values(), key=lambda p: (-p.score, p.item_id))
+    room = {"short": SHORT_PICKS, "long": LONG_PICKS}
+    per_subject: dict[str, int] = {}
+    picks: list[Pick] = []
+    capped: set[int] = set()
+    for pick in ordered:
+        if room[pick.section] == 0:
+            continue
+        key = _norm(by_id[pick.item_id].subject) or "misc"
+        if per_subject.get(key, 0) >= PER_SUBJECT:
+            capped.add(pick.item_id)
+            continue
+        per_subject[key] = per_subject.get(key, 0) + 1
+        room[pick.section] -= 1
+        picks.append(pick)
+
+    for rank, pick in enumerate(sorted(picks, key=lambda p: p.section != "short"), 1):
+        pick.rank = rank
+    picks.sort(key=lambda p: p.rank)
+    return DayList(picks=picks, scores=scores, capped=capped)
