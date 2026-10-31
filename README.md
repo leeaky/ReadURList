@@ -196,6 +196,14 @@ It applies every file in `supabase/migrations/`. `npx supabase@2.122.0 db reset 
 
 **Deploy order** (owner only), for a change that touches the database:
 
+Steps 1–2 in one go, from either folder, with Docker running:
+
+```powershell
+.\scripts\live-db-deploy.ps1 20261101000000_word_count.sql
+```
+
+It asks for the live session-pooler address (not shown, never saved), writes a schema and a data backup to `C:\backups`, stops if either is empty, then applies the named migration file(s) in order and stops at the first error. Restoring the data backup needs `--disable-triggers` (items refers to itself).
+
 1. Back up the live database (see [Backup](#backup)).
 2. Apply the new file(s) in `supabase/migrations/` to live. Migrations must work with the code already live: add, never rename or drop, in the same change.
 3. Merge to `main`. Vercel deploys the website.
