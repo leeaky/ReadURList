@@ -154,6 +154,16 @@ readurlist-digest
 
 Or `/digest` in Telegram.
 
+### Effort label
+
+Each ready item stores its `word_count`; reading time is that at 230 words a minute, and **short** means under 15 minutes (about 3,450 words), **long** 15 or more. Items saved before this existed get it once with:
+
+```bash
+readurlist-effort-backfill
+```
+
+It only fills items still missing a count, so running it again is harmless.
+
 ### Migrate an old local SQLite file
 
 ```bash

@@ -163,16 +163,18 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 - **Depends on:** Stage 2
 - **Produces:** an effort label and minutes estimate on every ready item, for stages 5 and 6.
 - **Terms:** Effort label, Reading time
-- **Status:** not started
+- **Status:** in progress
 - **Changed:** 2026-10-31 — Deploy task added for the owner (R-0009 §On the map); built only in dev from now on (stage 0). Deploy order set by the owner the same day: backup and migrate live before merging.
 - **Tasks:**
-  - [ ] (a) Every ready item shows short or long and an estimated reading time.
-    Detail: length decides, not density (owner, 2026-10-31: "short, long, short" for opinion piece / 30-page paper / 1,200-word proof post). Minutes from word count at about 230 words a minute; short = under 15 min (about 3,500 words), long = 15 min or more. Owner, 2026-10-31: "B: 15 min" (options were 20 / 15 / 10 min).
-  - [ ] (b) Items saved before this stage get the label too.
-    Detail: one-off backfill over existing ready items.
+  - [x] (a) Every ready item shows short or long and an estimated reading time.
+    Detail: length decides, not density (owner, 2026-10-31: "short, long, short" for opinion piece / 30-page paper / 1,200-word proof post). Minutes from word count at about 230 words a minute; short = under 15 min (about 3,500 words), long = 15 min or more. Owner, 2026-10-31: "B: 15 min" (options were 20 / 15 / 10 min). Built: new column `items.word_count` (migration `20261101000000_word_count.sql`, add-only), set when a page or pasted text is read; `readurlist/effort.py` `effort(words)` gives the label and minutes (rounded, at least 1). The label is stored as data here; the Today page, Telegram list and All cards show it in stages 7, 8 and 9. Tests: `test_effort.py`.
+  - [x] (b) Items saved before this stage get the label too.
+    Detail: one-off backfill over existing ready items. Built: `readurlist-effort-backfill` fills `word_count` from the stored text for ready items that lack it; safe to run twice.
   - [ ] (c) Deploy (you): back up the live database and apply this stage's database change, then merge to main, update and restart the live worker, run the one-off labelling and check a few items show short or long.
     Detail: backup → migration → merge → `git pull`, `uv sync`, restart the task in `C:/apps/readurlist` → run the backfill command the stage adds, from `C:/apps/readurlist`.
+- **How we know:** on the local database all 18 ready items have a word count after the backfill, 15 short and 3 long, and the 3 long ones are the 3 sample texts written to be over 3,450 words.
 - **Issues:** none
+- **Verified:** 2026-11-01 — `uv run pytest -q`: 96 passed (boundaries: 3,449 words short, 3,450 long). Local database: `npx supabase@2.122.0 migration up --local` applied `20261101000000_word_count.sql`; `readurlist-effort-backfill`: "Labelled 18 items.", again: "Labelled 0 items."; `psql`: ready 18, with a count 18, long 3, short 15; Unfetched items 0 with a count.
 
 ### Stage 5 — Score the pile in a way you can follow
 - **What gets built:** A score for each unread item made of a few named parts, each of which can be shown in a short sentence; the tool keeps each day's scores so it can say what changed.

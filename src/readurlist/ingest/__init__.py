@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from readurlist.config import Settings
 from readurlist.db import Item, get_session
+from readurlist.effort import word_count
 from readurlist.ingest.extract import ExtractError, FetchError, extract_article
 from readurlist.ingest.summarize import summarize_article
 from readurlist.ingest.untrusted import assess
@@ -133,6 +134,7 @@ def ingest_url(
             topics=list(result.topics),
             keywords=list(result.keywords),
             extracted_text=text,
+            word_count=word_count(text),
             priority=result.priority,
             note=note_clean,
             ingest_status=INGEST_READY,
