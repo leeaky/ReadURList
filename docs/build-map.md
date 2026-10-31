@@ -273,7 +273,28 @@ None.
 
 ## Code overlay
 
-Not started (step 4, after sign-off of the stages).
+Owner's stance on existing code (2026-10-31): "A". Works in daily use but unvetted: trust behaviour, not design. Parts the owner uses daily count as built if they do what the map says; anything the map changed (scoring, the list, Telegram, safety) is wrong until shown otherwise.
+
+Read on 2026-10-31 from commit `85b3803`, code only (no `.env`, no `web/.env.local`, no `tests/fixtures/pages/`, no live database). Tests not run: `uv run pytest -q` failed before running (it began resyncing `.venv` and hit a file locked by the worker); after the repair, `.venv\Scripts\python -m pytest -q` → "No module named pytest" (dev extras not installed by `uv sync`).
+
+| Stage | Status | Evidence | Gaps against the map | Proposal |
+|---|---|---|---|---|
+| 1 Save links from Telegram | built | `src/readurlist/bot/handlers.py`, `src/readurlist/ingest/__init__.py`, `src/readurlist/ingest/extract.py` | none; owner uses it daily and it answered `/start` on 2026-10-31 | keep |
+| 2 Read each page safely | partly built | `src/readurlist/llm/groq_provider.py` (no tools passed; `json_schema` with `strict: True`), `src/readurlist/prompts.py`, `src/readurlist/ingest/summarize.py` (clamps priority 1–5, caps lists) | (b) no invisible-character cleaning and no "this is data" wrapper: page text goes straight after "Article text:"; (c) no stored sample pages (0 files tracked under `tests/fixtures/pages/`); (e) no tripwire, no "held" status; checks beyond the schema are only clamps | fix |
+| 3 Fill in pages that couldn't be fetched | built | `web/app/actions.ts` `submitArticleBody`, `web/lib/pdf.ts`, `src/readurlist/ingest/complete.py` | uses the same reading path as stage 2, so it inherits stage 2's gaps; no "held" display (b) | keep; gaps close with stage 2 plus (b) |
+| 4 Tag each item by effort | missing | none. Full page text is already stored per item (`items.extracted_text`), so word counts need no refetch | everything | build |
+| 5 Score the pile in a way you can follow | partly built | `src/readurlist/rank/score.py` (45/20/20/15, two-per-subject cap, template reasons), `daily_picks.score` | old weights; only the total is stored, not parts; restore keeps the original save date (`web/app/actions.ts` `setSkipState` only clears `skipped_at`; recency uses `created_at`) | rebuild `score.py` (small, and the formula is replaced); keep the cap |
+| 6 Build the day's list | partly built | `src/readurlist/rank/run.py` `persist_ranking` (top 5, one list; past days kept in `daily_picks`; today's rows deleted and rebuilt on each run) | no short/long sections, no fallen-off list, no empty-long message | fix |
+| 7 Today page on the website | partly built | `web/app/page.tsx`, `web/components/TodayList.tsx`, `web/components/ItemCard.tsx`, `web/app/globals.css` (phone rules at 600px and 900px) | no sections, points, reading time or Fallen off section; the blurb (`web/lib/ranking-copy.ts`) describes the old formula | fix |
+| 8 Telegram daily list | partly built | `src/readurlist/rank/run.py` `format_digest`, `run_digest_job`; button handlers in `bot/handlers.py` | one list with Mark read / Skip buttons; no sections or fallen-off note; `/start` text mentions buttons | fix |
+| 9 Library tidy-up | built | `web/app/all/page.tsx`, `web/app/organize/page.tsx`, `web/app/unfetched/page.tsx`, `web/lib/filters.ts`, `web/lib/organize.ts` | no effort label on cards or filters | keep, plus the label |
+| 10 Is it working? | missing | none | everything | build |
+| extra: website password gate | extra (called for by Context §What this is NOT, but no stage covers it) | `web/middleware.ts`, `web/lib/auth.ts`, `web/app/login/` | none | keep |
+| extra: leftover similarity column | extra | `items.similar_to_item_id` in `src/readurlist/db/__init__.py` (unused since commit `781fc6c`) | dead code | flag; outside this build |
+| extra: SQLite migration script | extra | `scripts/migrate_sqlite.py` | one-off tool, README documents it | keep |
+
+Decision on stages 1–5 (owner, 2026-10-31): "Yes, all five" (1 keep, 2 fix, 3 keep, 4 build, 5 rebuild).
+Decision on stages 6–10 and extras (owner, 2026-10-31): "Yes, all" (6 fix, 7 fix, 8 fix, 9 keep plus effort label, 10 build; password gate keep; similarity column flag only, outside this build; SQLite script keep).
 
 ## Sign-off
 
