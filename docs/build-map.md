@@ -72,7 +72,7 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
   - [x] (a) You: make a separate live copy of the code on main and point the worker's scheduled task at it.
     Detail: clone to `C:/apps/readurlist`; run `uv sync` there; copy your live `.env` there yourself; in Task Scheduler change "ReadURList Worker" to run `C:\apps\readurlist\docs\run-worker-hidden.vbs` with Start in `C:\apps\readurlist`; stop the worker running from `C:/dev/ReadURList`, start the task, and confirm exactly one `readurlist.exe` runs, from `C:\apps\readurlist\.venv`. After this, `C:/dev/ReadURList` is dev only.
   - [x] (b) You: create a second Telegram bot for dev.
-    Detail: BotFather `/newbot` (e.g. `readurlist_dev_bot`); its token goes only in the dev `.env`; same `TELEGRAM_USER_ID`; `/start` it once.
+    Detail: BotFather `/newbot` (e.g. `readurlist_dev_bot`); its token goes only in the dev `.env`; same `TELEGRAM_USER_ID`; `/start` it once. Profile picture: `docs/dev-bot-logo.png` (owner, 2026-10-31: "i used this as the logo for the dev"; stored in the repo on the owner's "A").
   - [ ] (c) You: create a dev Supabase project.
     Detail: new project; apply every file in `supabase/migrations/` in order; its session-pooler `DATABASE_URL` goes in the dev `.env`, its `SUPABASE_URL` and service key in `web/.env.local`.
   - [ ] (d) You: switch this folder's two key files to the dev bot and dev database, with a separate dev Groq key.
