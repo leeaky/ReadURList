@@ -1,6 +1,6 @@
 "use client";
 
-import { UnfetchedCard } from "./UnfetchedCard";
+import { HeldCard, UnfetchedCard } from "./UnfetchedCard";
 import { useFilters } from "./AppFrame";
 import { filterItems } from "@/lib/filters";
 import { partitionUnfetched } from "@/lib/unfetched";
@@ -10,10 +10,12 @@ function Section({
   title,
   items,
   muted,
+  held,
 }: {
   title: string;
   items: ItemRow[];
   muted?: boolean;
+  held?: boolean;
 }) {
   if (items.length === 0) {
     return null;
@@ -22,9 +24,13 @@ function Section({
     <section className={muted ? "unfetched-section is-muted" : "unfetched-section"}>
       <h2 className={muted ? "section-title is-muted" : "section-title"}>{title}</h2>
       <div className="article-list">
-        {items.map((item) => (
-          <UnfetchedCard key={item.id} item={item} />
-        ))}
+        {items.map((item) =>
+          held ? (
+            <HeldCard key={item.id} item={item} />
+          ) : (
+            <UnfetchedCard key={item.id} item={item} />
+          ),
+        )}
       </div>
     </section>
   );
@@ -33,7 +39,7 @@ function Section({
 export function UnfetchedList({ items }: { items: ItemRow[] }) {
   const filters = useFilters();
   const visible = filterItems(items, { ...filters, matchUrl: true });
-  const { needsText, saved } = partitionUnfetched(visible);
+  const { held, needsText, saved } = partitionUnfetched(visible);
 
   if (items.length === 0) {
     return <p className="empty">No items waiting for article text.</p>;
@@ -43,6 +49,7 @@ export function UnfetchedList({ items }: { items: ItemRow[] }) {
   }
   return (
     <>
+      <Section title="Held" items={held} held />
       <Section title="Needs article text" items={needsText} />
       <Section title="Saved for today’s fill-in" items={saved} muted />
     </>

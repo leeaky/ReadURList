@@ -79,6 +79,15 @@ def test_complete_uses_json_schema_strict_and_room_for_reasoning():
     assert fmt["json_schema"]["schema"]["required"] == ["subject_maps", "topic_maps"]
 
 
+def test_complete_gives_the_model_no_tools():
+    provider, completions = _provider()
+    provider.complete("x", model="m", system="s", schema=CONSOLIDATE_SCHEMA)
+    kwargs = completions.calls[0]
+    assert "tools" not in kwargs
+    assert "functions" not in kwargs
+    assert "tool_choice" not in kwargs
+
+
 def test_complete_caps_completion_tokens_so_request_fits_tpm_limit():
     provider, completions = _provider()
     provider.complete(

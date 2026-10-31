@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   hasExtractedBody,
   partitionUnfetched,
+  releaseHeldGuard,
   unfetchedDeleteGuard,
   unfetchedIdleActionsDisabled,
 } from "./unfetched.ts";
@@ -39,6 +40,18 @@ describe("partitionUnfetched", () => {
       [2, 4],
     );
   });
+
+  it("puts held items in their own group even though they have text", () => {
+    const items = [
+      { id: 1, extracted_text: "", ingest_status: "pending_body" },
+      { id: 2, extracted_text: "page text", ingest_status: "held" },
+      { id: 3, extracted_text: "pasted", ingest_status: "pending_body" },
+    ];
+    const { held, needsText, saved } = partitionUnfetched(items);
+    assert.deepEqual(held.map((i) => i.id), [2]);
+    assert.deepEqual(needsText.map((i) => i.id), [1]);
+    assert.deepEqual(saved.map((i) => i.id), [3]);
+  });
 });
 
 describe("unfetchedIdleActionsDisabled", () => {
@@ -57,11 +70,27 @@ describe("unfetchedDeleteGuard", () => {
     assert.equal(unfetchedDeleteGuard({ ingest_status: "pending_body" }), null);
   });
 
+  it("allows held", () => {
+    assert.equal(unfetchedDeleteGuard({ ingest_status: "held" }), null);
+  });
+
   it("refuses missing rows and ready items", () => {
     assert.equal(unfetchedDeleteGuard(null), "Item is not awaiting a body.");
     assert.equal(
       unfetchedDeleteGuard({ ingest_status: "ready" }),
       "Item is not awaiting a body.",
     );
+  });
+});
+
+describe("releaseHeldGuard", () => {
+  it("allows held", () => {
+    assert.equal(releaseHeldGuard({ ingest_status: "held" }), null);
+  });
+
+  it("refuses missing rows and anything not held", () => {
+    assert.equal(releaseHeldGuard(null), "Item is not held.");
+    assert.equal(releaseHeldGuard({ ingest_status: "pending_body" }), "Item is not held.");
+    assert.equal(releaseHeldGuard({ ingest_status: "ready" }), "Item is not held.");
   });
 });

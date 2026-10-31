@@ -4,7 +4,7 @@ import asyncio
 import logging
 
 from readurlist.db import mark_item_read, mark_item_skipped
-from readurlist.ingest import INGEST_PENDING_BODY, ingest_url
+from readurlist.ingest import INGEST_HELD, INGEST_PENDING_BODY, ingest_url
 from readurlist.ingest.extract import find_urls
 from readurlist.rank.run import run_digest_job
 
@@ -25,6 +25,15 @@ def format_stub_ack(site_url: str, *, prefix: str = "") -> str:
             "Paste the text or a PDF on the website Unfetched page."
         )
     return f"{prefix}{body}"
+
+
+def format_held_ack(site_url: str, *, prefix: str = "") -> str:
+    base = (site_url or "").rstrip("/")
+    where = f"{base}/unfetched" if base else "the website Unfetched page"
+    return (
+        f"{prefix}Saved, but held: the page looks like it tries to instruct the AI, "
+        f"so it wasn't read. Release or delete it on {where}"
+    )
 
 
 async def handle_message(update, context) -> None:
@@ -56,6 +65,11 @@ async def handle_message(update, context) -> None:
             if item.ingest_status == INGEST_PENDING_BODY:
                 await update.message.reply_text(
                     format_stub_ack(settings.site_url, prefix=prefix)
+                )
+                continue
+            if item.ingest_status == INGEST_HELD:
+                await update.message.reply_text(
+                    format_held_ack(settings.site_url, prefix=prefix)
                 )
                 continue
 

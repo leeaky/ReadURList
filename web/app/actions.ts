@@ -9,7 +9,11 @@ import {
   sendToUnfetchedFields,
   sendToUnfetchedGuard,
 } from "@/lib/item-edit";
-import { unfetchedDeleteGuard } from "@/lib/unfetched";
+import {
+  releaseHeldGuard,
+  UNFETCHED_STATUSES,
+  unfetchedDeleteGuard,
+} from "@/lib/unfetched";
 import {
   bulkAddTopics,
   bulkRemoveTopics,
@@ -284,12 +288,53 @@ export async function deleteUnfetchedItem(
     .from("items")
     .delete()
     .eq("id", itemId)
-    .eq("ingest_status", "pending_body");
+    .in("ingest_status", UNFETCHED_STATUSES);
   if (error) {
     return { ok: false, error: "Could not delete this stub." };
   }
   revalidatePath("/unfetched");
   return { ok: true };
+}
+
+export type ReleaseHeldState =
+  | { ok: true; released: boolean }
+  | { ok: false; error: string };
+
+export async function releaseHeldItem(
+  itemId: number,
+  _previousState: ReleaseHeldState,
+  _formData: FormData,
+): Promise<ReleaseHeldState> {
+  if (!Number.isInteger(itemId) || itemId <= 0) {
+    return { ok: false, error: "Invalid article." };
+  }
+
+  const db = supabaseAdmin();
+  const { data: row, error: readError } = await db
+    .from("items")
+    .select("id, ingest_status")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (readError) {
+    return { ok: false, error: "Could not release this item." };
+  }
+  const blocked = releaseHeldGuard(
+    row ? { ingest_status: String(row.ingest_status) } : null,
+  );
+  if (blocked) {
+    return { ok: false, error: blocked };
+  }
+
+  const { error } = await db
+    .from("items")
+    .update({ ingest_status: "released" })
+    .eq("id", itemId)
+    .eq("ingest_status", "held");
+  if (error) {
+    return { ok: false, error: "Could not release this item." };
+  }
+  revalidatePath("/unfetched");
+  return { ok: true, released: true };
 }
 
 export type OrganizeState =

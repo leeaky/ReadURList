@@ -1,6 +1,7 @@
 import { AppFrame } from "@/components/AppFrame";
 import { UnfetchedList } from "@/components/UnfetchedList";
 import { supabaseAdmin, type ItemRow } from "@/lib/supabase";
+import { UNFETCHED_STATUSES } from "@/lib/unfetched";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ export default async function UnfetchedPage() {
     .select(
       "id, url, title, snapshot, subject, topics, keywords, created_at, read_at, ingest_status, extracted_text, note",
     )
-    .eq("ingest_status", "pending_body")
+    .in("ingest_status", UNFETCHED_STATUSES)
     .order("created_at", { ascending: false });
   if (error) {
     throw new Error(error.message);
@@ -22,7 +23,7 @@ export default async function UnfetchedPage() {
     <AppFrame current="/unfetched" showSidebar={false} facetItems={[]}>
       <h1 className="page-title">Unfetched</h1>
       <p className="page-blurb text-muted">
-        Links saved from Telegram. Paste the article text or attach a PDF so it can be summarized.
+        Links saved from Telegram. Paste the article text or attach a PDF so it can be summarized. Held pages looked like they try to instruct the AI: release one to have it read at the next daily run, or delete it.
       </p>
       <UnfetchedList items={items} />
     </AppFrame>

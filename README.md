@@ -219,6 +219,8 @@ Three tabs: **Today** (ranked picks plus a short ranking explainer; sidebar is t
 
 **Unfetched:** lists items the worker could not retrieve. Open **Paste article**, paste text or upload a PDF (max 3.5 MB — Vercel serverless limit). Saved text is ingested on the worker at the next daily digest (or when you run `/digest` / `readurlist-digest`). Stubs are hidden from Today and All until ingest completes.
 
+**Held:** before the model reads a page (or pasted text), the worker scans it for text that looks like it instructs the AI. A match is saved as **held**, not read, and listed on Unfetched with the reason. **Release** reads it at the next daily run without the scan; **Delete** removes it. The model has no tools either way, and its answer is rejected unless it fits the fixed form.
+
 ## Backup
 
 The corpus is in Supabase. Turn on backups in the project, or periodically dump with `supabase db dump` / `pg_dump`.
@@ -236,7 +238,7 @@ In the dev folder only (never in the live folder: `uv` re-syncs the environment 
 ```bash
 uv sync --extra dev
 uv run pytest -q
-cd web && npm ci && npm run build
+cd web && npm ci && npm test && npm run build
 ```
 
 CI runs pytest on push. Website builds on Vercel.

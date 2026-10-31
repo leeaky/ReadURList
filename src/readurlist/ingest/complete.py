@@ -7,8 +7,15 @@ from telegram import Bot
 
 from readurlist.config import Settings
 from readurlist.db import Item, get_session
-from readurlist.ingest import INGEST_PENDING_BODY, INGEST_READY
+from readurlist.ingest import (
+    INGEST_HELD,
+    INGEST_PENDING_BODY,
+    INGEST_READY,
+    INGEST_RELEASED,
+    held_note,
+)
 from readurlist.ingest.summarize import summarize_article
+from readurlist.ingest.untrusted import assess
 from readurlist.llm.base import LLMProvider
 from readurlist.tags.vocab import load_vocabulary
 
@@ -21,13 +28,20 @@ def complete_pending_bodies_sync(llm: LLMProvider, settings: Settings) -> list[I
     try:
         rows = (
             session.query(Item)
-            .filter(Item.ingest_status == INGEST_PENDING_BODY)
+            .filter(Item.ingest_status.in_([INGEST_PENDING_BODY, INGEST_RELEASED]))
             .all()
         )
         for row in rows:
             body = (row.extracted_text or "").strip()
             if not body:
                 continue
+            if row.ingest_status == INGEST_PENDING_BODY:
+                scan = assess(body)
+                if scan.suspicious:
+                    row.ingest_status = INGEST_HELD
+                    row.note = held_note(scan.signals)
+                    session.commit()
+                    continue
             try:
                 vocab = load_vocabulary()
                 result = summarize_article(
