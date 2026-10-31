@@ -61,6 +61,7 @@ class Item(Base):
     priority: Mapped[int] = mapped_column(Integer, default=3)
     note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     ingest_status: Mapped[str] = mapped_column(String(32), default="ready")
+    word_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     similar_to_item_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("items.id"), nullable=True
     )
@@ -141,6 +142,7 @@ def _migrate_sqlite(engine) -> None:
             "read_at": "ALTER TABLE items ADD COLUMN read_at DATETIME",
             "ingest_status": "ALTER TABLE items ADD COLUMN ingest_status VARCHAR(32) NOT NULL DEFAULT 'ready'",
             "skipped_at": "ALTER TABLE items ADD COLUMN skipped_at DATETIME",
+            "word_count": "ALTER TABLE items ADD COLUMN word_count INTEGER",
         }
         for name, sql in alters.items():
             if name not in columns:

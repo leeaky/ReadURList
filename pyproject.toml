@@ -22,6 +22,7 @@ dev = ["pytest>=8.0"]
 [project.scripts]
 readurlist = "readurlist.main:main"
 readurlist-digest = "readurlist.rank.run:main"
+readurlist-effort-backfill = "readurlist.effort:main"
 
 [build-system]
 requires = ["setuptools>=68"]

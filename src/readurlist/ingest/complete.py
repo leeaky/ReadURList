@@ -7,6 +7,7 @@ from telegram import Bot
 
 from readurlist.config import Settings
 from readurlist.db import Item, get_session
+from readurlist.effort import word_count
 from readurlist.ingest import (
     INGEST_HELD,
     INGEST_PENDING_BODY,
@@ -64,6 +65,7 @@ def complete_pending_bodies_sync(llm: LLMProvider, settings: Settings) -> list[I
             row.topics = list(result.topics)
             row.keywords = list(result.keywords)
             row.priority = result.priority
+            row.word_count = word_count(body)
             row.ingest_status = INGEST_READY
             session.commit()
             session.refresh(row)

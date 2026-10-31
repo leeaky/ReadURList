@@ -154,6 +154,16 @@ readurlist-digest
 
 Or `/digest` in Telegram.
 
+### Effort label
+
+Each ready item stores its `word_count`; reading time is that at 230 words a minute, and **short** means under 15 minutes (about 3,450 words), **long** 15 or more. Items saved before this existed get it once with:
+
+```bash
+readurlist-effort-backfill
+```
+
+It only fills items still missing a count, so running it again is harmless.
+
 ### Migrate an old local SQLite file
 
 ```bash
@@ -189,7 +199,7 @@ It applies every file in `supabase/migrations/`. `npx supabase@2.122.0 db reset 
 1. Back up the live database (see [Backup](#backup)).
 2. Apply the new file(s) in `supabase/migrations/` to live. Migrations must work with the code already live: add, never rename or drop, in the same change.
 3. Merge to `main`. Vercel deploys the website.
-4. In `C:\apps\ReadURList`: `git pull`, `uv sync`, then restart the "ReadURList Worker" task.
+4. In `C:\apps\ReadURList`: `git pull`; stop the worker with `Stop-Process -Id <pid>` (find it with `Get-CimInstance Win32_Process -Filter "name='readurlist.exe'"`; "End" in Task Scheduler stops only the launcher); `uv sync`; then **Run** the "ReadURList Worker" task and check exactly one `readurlist.exe` runs, from `C:\apps\ReadURList`.
 5. Check the change works on the live bot or website.
 
 Without a database change, skip steps 1–2.
