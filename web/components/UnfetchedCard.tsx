@@ -3,8 +3,10 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import {
   deleteUnfetchedItem,
+  releaseHeldItem,
   submitArticleBody,
   type DeleteUnfetchedState,
+  type ReleaseHeldState,
   type SubmitArticleBodyState,
 } from "@/app/actions";
 import { hasExtractedBody, unfetchedIdleActionsDisabled } from "@/lib/unfetched";
@@ -251,6 +253,86 @@ export function UnfetchedCard({ item }: { item: ItemRow }) {
           </form>
         </>
       )}
+    </article>
+  );
+}
+
+/** A page the tripwire held back from the model: release it or delete it. */
+export function HeldCard({ item }: { item: ItemRow }) {
+  const [confirming, setConfirming] = useState(false);
+  const releaseAction = releaseHeldItem.bind(null, item.id);
+  const releaseInitial: ReleaseHeldState = { ok: true, released: false };
+  const [releaseState, releaseFormAction, releasePending] = useActionState(
+    releaseAction,
+    releaseInitial,
+  );
+  const deleteAction = deleteUnfetchedItem.bind(null, item.id);
+  const deleteInitial: DeleteUnfetchedState = { ok: true };
+  const [deleteState, deleteFormAction, deletePending] = useActionState(
+    deleteAction,
+    deleteInitial,
+  );
+  const busy = releasePending || deletePending;
+
+  return (
+    <article className="article-card is-needs">
+      <div className="article-header-main">
+        <div className="article-meta-row">
+          <span className="tag tag-outline">Held</span>
+        </div>
+        <div className="article-title">{item.title.trim() || item.url}</div>
+        <a className="article-url" href={item.url} target="_blank" rel="noopener noreferrer">
+          {item.url}
+        </a>
+        {item.note ? <p className="article-note text-muted">{item.note}</p> : null}
+        <div className="article-date text-muted">Added {formatDate(item.created_at)}</div>
+      </div>
+      <div className="article-actions">
+        {confirming ? (
+          <>
+            <p className="article-why text-muted confirm-prompt">Delete this page?</p>
+            <form action={deleteFormAction}>
+              <button type="submit" className="btn btn-primary" disabled={busy}>
+                {deletePending ? "Deleting…" : "Delete"}
+              </button>
+            </form>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setConfirming(false)}
+              disabled={busy}
+            >
+              Cancel
+            </button>
+          </>
+        ) : (
+          <>
+            <form action={releaseFormAction}>
+              <button type="submit" className="btn btn-primary" disabled={busy}>
+                {releasePending ? "Releasing…" : "Release"}
+              </button>
+            </form>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setConfirming(true)}
+              disabled={busy}
+            >
+              Delete
+            </button>
+          </>
+        )}
+        {!releaseState.ok ? (
+          <p className="error" role="alert" aria-live="polite">
+            {releaseState.error}
+          </p>
+        ) : null}
+        {!deleteState.ok ? (
+          <p className="error" role="alert" aria-live="polite">
+            {deleteState.error}
+          </p>
+        ) : null}
+      </div>
     </article>
   );
 }
