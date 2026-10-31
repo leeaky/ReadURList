@@ -51,3 +51,30 @@ def test_pending_body_stub_not_in_daily_picks(tmp_path):
         assert ready.id in ids or session.query(DailyPick).filter_by(item_id=ready.id).count() == 1
     finally:
         session.close()
+
+
+def test_held_and_released_items_not_in_daily_picks(tmp_path):
+    init_db(f"sqlite:///{tmp_path / 't.db'}")
+    now = datetime(2026, 8, 26, 8, 0, tzinfo=timezone.utc)
+    session = get_session()
+    try:
+        for status in ("held", "released"):
+            session.add(
+                Item(
+                    url=f"https://example.com/{status}",
+                    title=status,
+                    snapshot="a snapshot",
+                    subject="climate",
+                    topics=["climate"],
+                    keywords=["trees"],
+                    extracted_text="x" * 80,
+                    priority=5,
+                    ingest_status=status,
+                    created_at=now,
+                )
+            )
+        session.commit()
+    finally:
+        session.close()
+
+    assert persist_ranking(now=now) == []

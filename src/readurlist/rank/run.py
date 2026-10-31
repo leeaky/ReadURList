@@ -43,7 +43,7 @@ def persist_ranking(*, now: datetime | None = None) -> list[DailyPick]:
     try:
         items = (
             session.query(Item)
-            .filter(Item.ingest_status != "pending_body")
+            .filter(Item.ingest_status == "ready")
             .all()
         )
         rank_items = [_to_rank_item(i) for i in items]

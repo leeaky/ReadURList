@@ -4,9 +4,42 @@ import json
 from collections.abc import Sequence
 from dataclasses import dataclass
 
+from readurlist.ingest.untrusted import wrap_untrusted
 from readurlist.llm.base import LLMProvider
 from readurlist.prompts import INGEST_SCHEMA, INGEST_SYSTEM
 from readurlist.tags.normalize import canonicalize_label, unique_labels
+
+MAX_SNAPSHOT = 1200
+MAX_SUBJECT = 80
+MAX_LABEL = 60
+
+
+class AnswerRejected(ValueError):
+    """The model's answer did not fit the fixed form (R-0003 layer 2)."""
+
+
+def _check_answer(data: object) -> dict:
+    if not isinstance(data, dict):
+        raise AnswerRejected("answer is not an object")
+    for key in ("title", "snapshot", "subject"):
+        if not isinstance(data.get(key), str):
+            raise AnswerRejected(f"{key} is not text")
+    snapshot = data["snapshot"].strip()
+    if not snapshot or len(snapshot) > MAX_SNAPSHOT:
+        raise AnswerRejected(f"snapshot length {len(snapshot)} outside 1–{MAX_SNAPSHOT}")
+    subject = data["subject"].strip()
+    if not subject or len(subject) > MAX_SUBJECT:
+        raise AnswerRejected(f"subject length {len(subject)} outside 1–{MAX_SUBJECT}")
+    for key in ("topics", "keywords"):
+        values = data.get(key)
+        if not isinstance(values, list) or not all(isinstance(v, str) for v in values):
+            raise AnswerRejected(f"{key} is not a list of text")
+        if any(len(v.strip()) > MAX_LABEL for v in values):
+            raise AnswerRejected(f"a {key[:-1]} is longer than {MAX_LABEL} characters")
+    priority = data.get("priority")
+    if type(priority) is not int or not 1 <= priority <= 5:
+        raise AnswerRejected(f"priority {priority!r} is not 1–5")
+    return data
 
 
 @dataclass
@@ -54,11 +87,8 @@ def summarize_article(
             + "\n".join(f"- {t}" for t in topics_v)
             + "\n\n"
         )
-    prompt = (
-        vocab_block
-        + f"URL: {url}\n"
-        + f"Extracted title hint: {title_hint}\n\n"
-        + f"Article text:\n{clipped}"
+    prompt = vocab_block + wrap_untrusted(
+        f"Extracted title hint: {title_hint}\n\nArticle text:\n{clipped}", url
     )
     raw = llm.complete(
         prompt,
@@ -67,14 +97,12 @@ def summarize_article(
         schema=INGEST_SCHEMA,
         temperature=0.2,
     )
-    data = json.loads(raw)
-    priority = data.get("priority", 3)
     try:
-        priority_int = int(priority)
-    except (TypeError, ValueError):
-        priority_int = 3
-    priority_int = min(max(priority_int, 1), 5)
-    snapshot = (data.get("snapshot") or "").strip()
+        data = _check_answer(json.loads(raw))
+    except json.JSONDecodeError as exc:
+        raise AnswerRejected("answer is not JSON") from exc
+    priority_int = data["priority"]
+    snapshot = data["snapshot"].strip()
     subject = canonicalize_label(data.get("subject") or "", subjects)
     topics = unique_labels(
         [

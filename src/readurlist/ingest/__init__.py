@@ -4,12 +4,21 @@ from readurlist.config import Settings
 from readurlist.db import Item, get_session
 from readurlist.ingest.extract import ExtractError, FetchError, extract_article
 from readurlist.ingest.summarize import summarize_article
+from readurlist.ingest.untrusted import assess
 from readurlist.llm.base import LLMProvider
 from readurlist.tags.vocab import load_vocabulary
 
 INGEST_READY = "ready"
 INGEST_PENDING_BODY = "pending_body"
+# Tripwire (R-0003 layer 4): text that looks like it instructs the AI waits on
+# Unfetched until the owner releases (read without the scan) or deletes it.
+INGEST_HELD = "held"
+INGEST_RELEASED = "released"
 NOT_AVAILABLE = "not available"
+
+
+def held_note(signals: list[str]) -> str:
+    return f"held: looks like it instructs the AI ({', '.join(signals)})"
 
 
 def _save_stub(
@@ -18,6 +27,8 @@ def _save_stub(
     title: str,
     note: str,
     note_clean: str | None,
+    status: str = INGEST_PENDING_BODY,
+    text: str = "",
 ) -> tuple[Item, bool]:
     session = get_session()
     try:
@@ -32,10 +43,10 @@ def _save_stub(
             subject=NOT_AVAILABLE,
             topics=[],
             keywords=[],
-            extracted_text="",
+            extracted_text=text,
             priority=3,
-            note=note_clean or note,
-            ingest_status=INGEST_PENDING_BODY,
+            note=note if status == INGEST_HELD else (note_clean or note),
+            ingest_status=status,
         )
         session.add(item)
         session.commit()
@@ -80,6 +91,17 @@ def ingest_url(
         return _save_stub(url=url, title=url, note=str(exc), note_clean=note_clean)
     except ExtractError as exc:
         return _save_stub(url=url, title=exc.title, note=str(exc), note_clean=note_clean)
+
+    scan = assess(f"{title_hint}\n{text}")
+    if scan.suspicious:
+        return _save_stub(
+            url=url,
+            title=title_hint or url,
+            note=held_note(scan.signals),
+            note_clean=note_clean,
+            status=INGEST_HELD,
+            text=text,
+        )
 
     vocab = load_vocabulary()
     result = summarize_article(
