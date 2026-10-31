@@ -7,6 +7,7 @@ import {
   parseTopicList,
   sendToUnfetchedFields,
   sendToUnfetchedGuard,
+  skipStateFields,
 } from "./item-edit.ts";
 
 describe("parseTopicList", () => {
@@ -117,5 +118,20 @@ describe("isReadyItem", () => {
     assert.equal(isReadyItem({ ingest_status: "pending_body" }), false);
     assert.equal(isReadyItem({ ingest_status: undefined }), false);
     assert.equal(isReadyItem(null), false);
+  });
+});
+
+describe("skipStateFields", () => {
+  const now = new Date("2026-11-01T08:00:00.000Z");
+
+  it("skipping stamps skipped_at only", () => {
+    assert.deepEqual(skipStateFields(true, now), { skipped_at: "2026-11-01T08:00:00.000Z" });
+  });
+
+  it("restoring clears skipped_at and restarts recency from now", () => {
+    assert.deepEqual(skipStateFields(false, now), {
+      skipped_at: null,
+      restored_at: "2026-11-01T08:00:00.000Z",
+    });
   });
 });

@@ -112,24 +112,6 @@ def test_two_unread_with_overlapping_tags_can_both_rank():
     assert {p.item_id for p in picks} == {1, 2, 3}
 
 
-def test_path_novelty_boosts_unseen_subject():
-    path = [
-        _item(1, subject="ai", keywords=["llm", "gpt"], topics=["ai"], read=True, days_ago=3),
-        _item(2, subject="ai", keywords=["llm", "agents"], topics=["ai"], read=True, days_ago=2),
-    ]
-    same = _item(3, subject="ai", keywords=["llm", "eval"], topics=["ai"], days_ago=0, priority=3)
-    novel = _item(
-        4,
-        subject="housing",
-        keywords=["rent", "zoning"],
-        topics=["housing"],
-        days_ago=0,
-        priority=3,
-    )
-    picks = score_unread(path + [same, novel], now=NOW, top_n=1)
-    assert picks[0].item_id == 4
-
-
 def test_top_n_stable_for_same_fixture():
     items = [
         _item(i, subject="s" + str(i % 3), keywords=[f"k{i}", "shared"], days_ago=i, priority=3)
@@ -162,35 +144,53 @@ def test_clearing_read_at_returns_item_to_pool():
     assert [p.item_id for p in score_unread([item], now=NOW, top_n=5)] == [1]
 
 
-def test_ranking_weights_are_four_signals_summing_to_one():
+def test_score_has_two_parts_subject_65_and_recency_35():
     import readurlist.rank.score as score
 
-    assert (score.W_DEMAND, score.W_RECENCY, score.W_NOVELTY, score.W_PRIORITY) == (
-        0.45,
-        0.20,
-        0.20,
-        0.15,
-    )
-    assert abs(
-        score.W_DEMAND + score.W_RECENCY + score.W_NOVELTY + score.W_PRIORITY - 1.0
-    ) < 1e-9
-    assert not hasattr(score, "W_CENTRAL")
-    assert not hasattr(score, "cluster_items")
-    assert not hasattr(score, "jaccard")
-    assert not hasattr(score, "DUPLICATE_JACCARD")
-    assert not hasattr(score, "_is_near_dup")
-    assert not hasattr(score, "_keep_canonical_unread")
-    assert not hasattr(score, "_dup_tags")
+    assert (score.SUBJECT_POINTS, score.RECENCY_POINTS) == (65, 35)
+    for gone in ("W_NOVELTY", "W_PRIORITY", "_path_novelty", "_priority_norm"):
+        assert not hasattr(score, gone)
 
 
-def test_demand_reason_says_you_keep_saving_not_cluster():
-    items = [_item(i, subject="llms", days_ago=1, priority=3) for i in range(1, 5)]
-    items.append(_item(9, subject="climate", days_ago=1, priority=3))
-    picks = score_unread(items, now=NOW, top_n=5)
-    assert picks
-    assert all("cluster" not in p.reason.lower() for p in picks)
-    llm = [p for p in picks if "llms" in p.reason or "keep saving" in p.reason]
-    assert any("you keep saving llms" in p.reason for p in picks)
+def test_points_per_part_add_up_to_the_score():
+    items = [_item(1, subject="llms", days_ago=0), _item(2, subject="llms", days_ago=3)]
+    items.append(_item(3, subject="climate", days_ago=1))
+    for p in score_unread(items, now=NOW, top_n=5):
+        assert p.subject_points + p.recency_points == p.score
+        assert 0 <= p.subject_points <= 65 and 0 <= p.recency_points <= 35
+
+
+def test_biggest_subject_gets_all_65_subject_points():
+    items = [_item(i, subject="llms", days_ago=2) for i in range(1, 5)]
+    items.append(_item(9, subject="climate", days_ago=2))
+    picks = {p.item_id: p for p in score_unread(items, now=NOW, top_n=5)}
+    assert picks[1].subject_points == 65
+    assert picks[9].subject_points == 16  # 1 of 4: 65 / 4 = 16.25
+
+
+def test_saved_just_now_gets_all_35_recency_points():
+    picks = score_unread([_item(1, days_ago=0)], now=NOW, top_n=5)
+    assert picks[0].recency_points == 35
+
+
+def test_reason_names_the_biggest_part_and_shows_the_points():
+    items = [_item(i, subject="llms", days_ago=5) for i in range(1, 5)]
+    items.append(_item(9, subject="climate", days_ago=0))
+    picks = {p.item_id: p for p in score_unread(items, now=NOW, top_n=5)}
+    assert picks[1].reason.startswith("You keep saving llms: 4 unread")
+    assert "subject 65 + recency 6 = 71" in picks[1].reason
+    assert picks[9].reason.startswith("Saved today")
+    assert "subject 16 + recency 35 = 51" in picks[9].reason
+    assert all("cluster" not in p.reason.lower() for p in picks.values())
+
+
+def test_restored_item_counts_from_the_restore_date():
+    old = _item(1, subject="llms", days_ago=30)
+    restored = _item(2, subject="llms", days_ago=30)
+    restored.restored_at = NOW
+    picks = {p.item_id: p for p in score_unread([old, restored], now=NOW, top_n=5)}
+    assert picks[2].recency_points == 35
+    assert picks[1].recency_points == 1
 
 
 def test_two_unread_same_subject_still_cap_at_two():

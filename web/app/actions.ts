@@ -8,6 +8,7 @@ import {
   parseTopicList,
   sendToUnfetchedFields,
   sendToUnfetchedGuard,
+  skipStateFields,
 } from "@/lib/item-edit";
 import {
   releaseHeldGuard,
@@ -81,7 +82,7 @@ export async function setSkipState(itemId: number, skipped: boolean) {
   const db = supabaseAdmin();
   const { error } = await db
     .from("items")
-    .update({ skipped_at: skipped ? new Date().toISOString() : null })
+    .update(skipStateFields(skipped, new Date()))
     .eq("id", itemId)
     .eq("ingest_status", "ready");
   if (error) {

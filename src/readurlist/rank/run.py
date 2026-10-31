@@ -32,6 +32,7 @@ def _to_rank_item(row: Item) -> RankItem:
         read_at=row.read_at,
         priority=row.priority or 3,
         skipped_at=row.skipped_at,
+        restored_at=row.restored_at,
     )
 
 
@@ -59,6 +60,8 @@ def persist_ranking(*, now: datetime | None = None) -> list[DailyPick]:
                 rank=pick.rank,
                 score=pick.score,
                 reason=pick.reason,
+                subject_points=pick.subject_points,
+                recency_points=pick.recency_points,
             )
             session.add(row)
             stored.append(row)

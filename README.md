@@ -120,7 +120,7 @@ readurlist
 
 Set `SITE_URL` to the public website origin (no trailing slash). Telegram uses it for Unfetched links when a URL could not be retrieved.
 
-Before ranking, the daily job (and `/digest`) runs Groq ingest on stubs that already have pasted text, then consolidates near-duplicate subjects/topics when the vocabulary has fragmented. It ranks only **ready** items that are neither read nor skipped: subject demand 0.45, recency 0.20, path novelty 0.20, LLM priority 0.15; at most two picks per subject, top 5. Keywords stay on cards as display. Ranking reasons are templates, not an extra LLM call.
+Before ranking, the daily job (and `/digest`) runs Groq ingest on stubs that already have pasted text, then consolidates near-duplicate subjects/topics when the vocabulary has fragmented. It ranks only **ready** items that are neither read nor skipped: two parts out of 100: **subject** up to 65 (65 × the item's subject's unread count ÷ the biggest subject's) and **recency** up to 35 (35 ÷ (1 + days since saved, or since restored if later)); at most two picks per subject, top 5. Each pick's reason names its bigger part and shows the points, and each day's picks are kept with both parts. Keywords stay on cards as display. Ranking reasons are templates, not an extra LLM call.
 
 ### Start on boot (macOS)
 
