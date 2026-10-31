@@ -1,0 +1,80 @@
+-- Made-up sample items for the local dev database only (build map stage 0 (f)).
+-- Every title, subject and text here is invented; nothing is copied from live.
+-- URLs use example.com / example.org, which are reserved and never real pages.
+-- Loaded by `npx supabase db reset` (local only; never run with --linked).
+--
+-- Mix: 4 subjects; short and long texts (long = over 15 min at 230 words a
+-- minute, i.e. over 3,450 words); 3 waiting on Unfetched; 2 read; 1 skipped;
+-- saved dates spread over the last 40 days.
+
+insert into items (url, title, snapshot, subject, topics, keywords, extracted_text, priority, created_at, ingest_status, read_at, skipped_at)
+values
+  ('https://example.com/garden/soil-basics', 'Sample: soil basics for small gardens',
+   'Invented summary about soil for a dev test.', 'Gardening', '{gardening,soil}', '{compost,soil}',
+   repeat('Invented sample sentence about soil and compost for testing. ', 120), 3,
+   now() - interval '1 day', 'ready', null, null),
+  ('https://example.com/garden/winter-beds', 'Sample: preparing beds for winter',
+   'Invented summary about winter beds.', 'Gardening', '{gardening,seasons}', '{mulch,winter}',
+   repeat('Invented sample sentence about mulch and frost for testing. ', 200), 2,
+   now() - interval '6 days', 'ready', null, null),
+  ('https://example.com/garden/long-history', 'Sample: a long history of allotments',
+   'Invented summary of a long garden history piece.', 'Gardening', '{gardening,history}', '{allotment,history}',
+   repeat('Invented sample sentence about the history of allotments. ', 600), 3,
+   now() - interval '20 days', 'ready', null, null),
+  ('https://example.org/money/budget-weekly', 'Sample: a weekly budget routine',
+   'Invented summary about budgeting.', 'Money', '{money,budgeting}', '{budget,routine}',
+   repeat('Invented sample sentence about a weekly budget for testing. ', 150), 4,
+   now() - interval '2 days', 'ready', null, null),
+  ('https://example.org/money/index-funds-explained', 'Sample: index funds explained at length',
+   'Invented summary of a long explainer.', 'Money', '{money,investing}', '{funds,explainer}',
+   repeat('Invented sample sentence explaining funds in general terms. ', 650), 3,
+   now() - interval '9 days', 'ready', null, null),
+  ('https://example.org/money/receipts', 'Sample: keeping receipts tidy',
+   'Invented summary about receipts.', 'Money', '{money,admin}', '{receipts,filing}',
+   repeat('Invented sample sentence about filing receipts. ', 90), 2,
+   now() - interval '30 days', 'ready', null, null),
+  ('https://example.com/code/small-functions', 'Sample: why small functions help',
+   'Invented summary about small functions.', 'Programming', '{programming,style}', '{functions,readability}',
+   repeat('Invented sample sentence about short functions in code. ', 180), 4,
+   now() - interval '3 hours', 'ready', null, null),
+  ('https://example.com/code/testing-habits', 'Sample: testing habits that stick',
+   'Invented summary about tests.', 'Programming', '{programming,testing}', '{tests,habits}',
+   repeat('Invented sample sentence about writing tests first. ', 220), 3,
+   now() - interval '4 days', 'ready', null, null),
+  ('https://example.com/code/database-design-guide', 'Sample: a long guide to database design',
+   'Invented summary of a long design guide.', 'Programming', '{programming,databases}', '{schema,design}',
+   repeat('Invented sample sentence about tables, keys and indexes. ', 700), 4,
+   now() - interval '12 days', 'ready', null, null),
+  ('https://example.com/code/old-editor-tips', 'Sample: editor tips from last month',
+   'Invented summary about editor tips.', 'Programming', '{programming,tools}', '{editor,shortcuts}',
+   repeat('Invented sample sentence about editor shortcuts. ', 100), 2,
+   now() - interval '38 days', 'ready', null, null),
+  ('https://example.org/walks/coastal-route', 'Sample: a short coastal walk',
+   'Invented summary about a walk.', 'Walking', '{walking,routes}', '{coast,route}',
+   repeat('Invented sample sentence about a walk along the coast. ', 110), 3,
+   now() - interval '5 days', 'ready', null, null),
+  ('https://example.org/walks/boots', 'Sample: choosing walking boots',
+   'Invented summary about boots.', 'Walking', '{walking,gear}', '{boots,fit}',
+   repeat('Invented sample sentence about how boots should fit. ', 130), 2,
+   now() - interval '15 days', 'ready', null, null),
+  -- Waiting on Unfetched: saved, but no text yet.
+  ('https://example.com/papers/sample-paper-one.pdf', 'Sample paper one (no text yet)',
+   '', '', '{}', '{}', '', 3, now() - interval '2 days', 'pending_body', null, null),
+  ('https://example.com/papers/sample-paper-two.pdf', 'Sample paper two (no text yet)',
+   '', '', '{}', '{}', '', 3, now() - interval '7 days', 'pending_body', null, null),
+  ('https://example.org/blocked/sample-page', 'Sample page that could not be fetched',
+   '', '', '{}', '{}', '', 3, now() - interval '11 days', 'pending_body', null, null),
+  -- Already read.
+  ('https://example.com/garden/seed-saving', 'Sample: saving seeds (read)',
+   'Invented summary about seed saving.', 'Gardening', '{gardening,seeds}', '{seeds,saving}',
+   repeat('Invented sample sentence about saving seeds. ', 140), 3,
+   now() - interval '14 days', 'ready', now() - interval '3 days', null),
+  ('https://example.org/money/pensions-intro', 'Sample: pensions in brief (read)',
+   'Invented summary about pensions.', 'Money', '{money,pensions}', '{pension,intro}',
+   repeat('Invented sample sentence about pensions in general. ', 160), 3,
+   now() - interval '18 days', 'ready', now() - interval '1 day', null),
+  -- Skipped.
+  ('https://example.com/code/framework-hype', 'Sample: a framework hype piece (skipped)',
+   'Invented summary of a skipped piece.', 'Programming', '{programming,opinion}', '{framework,opinion}',
+   repeat('Invented sample sentence giving an opinion on frameworks. ', 120), 1,
+   now() - interval '25 days', 'ready', null, now() - interval '2 days');

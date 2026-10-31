@@ -1,6 +1,6 @@
 # readurlist — Build Map
 
-**Status:** signed off 2026-10-31
+**Status:** building (signed off 2026-10-31)
 
 **Sources (the authority for this map):**
 - **Brainstorm** = `C:/dev/ai-factory/knowledge/brainstorms/2026-10-30-readurlist.md` (ai-factory `main`, commit `41c1e16`). Cited as "Brainstorm §x".
@@ -62,32 +62,39 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 ## Stages
 
 ### Stage 0 — Separate dev from live
-- **What gets built:** The live worker runs from its own copy of the code on main, and dev gets its own Telegram bot, Supabase database and keys; the website's production version builds only from main, and previews use dev data. Only you move changes to live.
+- **What gets built:** The live worker runs from its own copy of the code on main, and dev gets its own Telegram bot, a Supabase database running on this PC, and its own keys; the website's production version builds only from main, previews never get live keys, and website changes are checked in a browser on this PC. Only you move changes to live.
 - **Why:** On 2026-10-31 the build chat changed the environment the live worker was running from, because dev and live were one folder with one set of keys and one database; agents must build and test where live can't be reached (R-0009 §Decision, §What "apart" means, §Why).
 - **Depends on:** nothing
 - **Produces:** a dev folder, bot and database agents can use freely; a live folder, bot and database only you change; for every later stage, a Deploy task you run.
 - **Terms:** Live, Dev, Checkout, Deploy, Migration, Backup, Preview
-- **Status:** not started
+- **Status:** done
+- **Changed:** 2026-11-01 — the dev database moves from a second Supabase project to a local copy of Supabase on this PC, because the free plan allows only 2 active projects (clipr and readurlist); see B1. So (c) becomes a build-chat task, and (e) no longer gives previews a database: you check website changes on this PC instead of on a preview link.
 - **Tasks:**
-  - [ ] (a) You: make a separate live copy of the code on main and point the worker's scheduled task at it.
+  - [x] (a) You: make a separate live copy of the code on main and point the worker's scheduled task at it.
     Detail: clone to `C:/apps/readurlist`; run `uv sync` there; copy your live `.env` there yourself; in Task Scheduler change "ReadURList Worker" to run `C:\apps\readurlist\docs\run-worker-hidden.vbs` with Start in `C:\apps\readurlist`; stop the worker running from `C:/dev/ReadURList`, start the task, and confirm exactly one `readurlist.exe` runs, from `C:\apps\readurlist\.venv`. After this, `C:/dev/ReadURList` is dev only.
-  - [ ] (b) You: create a second Telegram bot for dev.
-    Detail: BotFather `/newbot` (e.g. `readurlist_dev_bot`); its token goes only in the dev `.env`; same `TELEGRAM_USER_ID`; `/start` it once.
-  - [ ] (c) You: create a dev Supabase project.
-    Detail: new project; apply every file in `supabase/migrations/` in order; its session-pooler `DATABASE_URL` goes in the dev `.env`, its `SUPABASE_URL` and service key in `web/.env.local`.
-  - [ ] (d) You: switch this folder's two key files to the dev bot and dev database, with a separate dev Groq key.
-    Detail: after (a)–(c): `C:/dev/ReadURList/.env` gets the dev bot token, dev `DATABASE_URL` and a dev Groq key; `web/.env.local` gets the dev `SUPABASE_URL`, service key and a dev `SITE_PASSWORD`. No live value stays in `C:/dev/ReadURList`. Agents don't open these files (R-0002); you confirm in chat when done. Owner, 2026-10-31: "In stage 0, include switching this folder's .env and web/.env.local to the dev bot and dev database".
-  - [ ] (e) You: set the website so production builds only from main and previews use the dev database.
-    Detail: Vercel Settings → Git → Production Branch = `main`; Environment Variables: Production = live Supabase, Preview = dev Supabase and dev `SITE_PASSWORD`.
-  - [ ] (f) The dev database gets made-up sample items so lists can be tested without live data.
-    Detail: a seed script with invented titles, subjects and short invented text, never copied from the live database (R-0003; R-0009 §What "apart" means). Runs only against the dev `DATABASE_URL`.
-  - [ ] (g) Tests run in the dev folder without touching anything live.
-    Detail: only after (a)–(d): `uv sync --extra dev` in `C:/dev/ReadURList`, then `uv run pytest -q`, and `npm test` in `web/`.
-  - [ ] (h) The README explains how dev and live are set up and how you deploy.
-    Detail: README §Worker gains a "Dev and live" section: the two folders, two bots, two databases, Vercel production vs preview, and the deploy order (backup → migrate live → merge to main → `git pull`, `uv sync`, restart the task → check).
-  - [ ] (i) Deploy (you): confirm only one worker runs, from the live copy, and the live bot still answers /start.
+  - [x] (b) You: create a second Telegram bot for dev.
+    Detail: BotFather `/newbot` (e.g. `readurlist_dev_bot`); its token goes only in the dev `.env`; same `TELEGRAM_USER_ID`; `/start` it once. Profile picture: `docs/dev-bot-logo.png` (owner, 2026-10-31: "i used this as the logo for the dev"; stored in the repo on the owner's "A").
+  - [x] (c) The dev database runs on this PC as a local copy of Supabase, with the same tables as live.
+    Detail: Supabase command-line tool through `npx` at a pinned version (no global install); `supabase init` adds `supabase/config.toml`; `supabase start` runs it in Docker (Docker 29.7.2 is installed and running, checked 2026-11-01) and applies every file in `supabase/migrations/` in order; expect the 3 tables `items`, `daily_picks`, `digest_runs`, empty. Docker must be running whenever dev runs. Owner, 2026-11-01: "A: local on this PC".
+  - [x] (d) You: switch this folder's two key files to the dev bot and dev database, with a separate dev Groq key.
+    Detail: after (a)–(c): `C:/dev/ReadURList/.env` gets the dev bot token, the local `DATABASE_URL` and a dev Groq key; `web/.env.local` gets the local `SUPABASE_URL`, local service key and a dev `SITE_PASSWORD`. The local values come from `npx supabase status`, which you run and copy from yourself. No live value stays in `C:/dev/ReadURList`. Agents don't open these files (R-0002); you confirm in chat when done. Owner, 2026-10-31: "In stage 0, include switching this folder's .env and web/.env.local to the dev bot and dev database".
+  - [x] (e) You: set the website so production builds only from main and previews never get live keys.
+    Detail: Vercel Settings → Git → Production Branch = `main`; Environment Variables: the live Supabase keys and `SITE_PASSWORD` ticked for Production only, not Preview or Development. Previews can't reach the database on this PC, so they show no data; website changes are checked with `npm run dev` in `web/` against the local database.
+  - [x] (f) The dev database gets made-up sample items so lists can be tested without live data.
+    Detail: a seed script with invented titles, subjects and short invented text, never copied from the live database (R-0003; R-0009 §What "apart" means). Runs only against the dev `DATABASE_URL`. Built as `supabase/seed.sql`, loaded by `npx supabase@2.122.0 db reset --local`; links use the reserved example.com / example.org domains.
+  - [x] (g) Tests run in the dev folder without touching anything live.
+    Detail: only after (a)–(d): `uv sync --extra dev` in `C:/dev/ReadURList`, then `uv run pytest -q`; in `web/`, `npm ci` then `npm run build` (the website has no test script, so `npm test` from the earlier plan doesn't exist; a clean build is its check until a stage adds tests).
+  - [x] (h) The README explains how dev and live are set up and how you deploy.
+    Detail: README §Worker gains a "Dev and live" section: the two folders, two bots, the live database and the local dev database (start Docker, `npx supabase start`), Vercel production only from main, and the deploy order (backup → migrate live → merge to main → `git pull`, `uv sync`, restart the task → check).
+  - [x] (i) Deploy (you): confirm only one worker runs, from the live copy, and the live bot still answers /start.
     Detail: Task Manager, or `Get-CimInstance Win32_Process -Filter "name='readurlist.exe'"`; ExecutablePath under `C:\apps\readurlist`.
-- **Issues:** I1 (2026-10-31): live code was changed by the build chat. Dev and live were one folder (`C:/dev/ReadURList`), so the worker ran from the folder agents edit. During the code overlay the build chat ran `uv run pytest -q`; `uv run` first resyncs the environment, began replacing packages in the live worker's `.venv`, hit a file the worker held open, and stopped halfway, leaving `openai` (Groq client) and `psycopg` (database driver) missing. The running worker kept going only because both were already loaded; any restart would have failed. With the owner's OK ("B: you do it"), the build chat then stopped the live worker, ran `uv sync` on the live environment and restarted it through Task Scheduler, which R-0009 now forbids agents to do. Side effects: the live worker now runs the package versions pinned in `uv.lock` (commit `af58be1`) for the first time; `pytest` is no longer installed there; a duplicate worker running since 15 Oct was stopped. The owner confirmed the bot answered `/start` afterwards. Not touched: the live database and the repo files. This stage exists so it can't happen again.
+- **How we know:** exactly 1 worker process runs, and its path is under the live copy (before stage 0 there were 2, both from the dev folder); the live bot answers /start.
+- **Issues:** I1 (2026-10-31): live code was changed by the build chat. Dev and live were one folder (`C:/dev/ReadURList`), so the worker ran from the folder agents edit. During the code overlay the build chat ran `uv run pytest -q`; `uv run` first resyncs the environment, began replacing packages in the live worker's `.venv`, hit a file the worker held open, and stopped halfway, leaving `openai` (Groq client) and `psycopg` (database driver) missing. The running worker kept going only because both were already loaded; any restart would have failed. With the owner's OK ("B: you do it"), the build chat then stopped the live worker, ran `uv sync` on the live environment and restarted it through Task Scheduler, which R-0009 now forbids agents to do. Side effects: the live worker now runs the package versions pinned in `uv.lock` (commit `af58be1`) for the first time; `pytest` is no longer installed there; a duplicate worker running since 15 Oct was stopped. The owner confirmed the bot answered `/start` afterwards. Not touched: the live database and the repo files. This stage exists so it can't happen again. I2 (2026-10-31): while doing (a), the task first pointed at `C:\app\ReadURList` (no such folder; Task Scheduler result `0x8007010B`, "The directory name is invalid"); once fixed, the task was started twice and two workers ran; the owner stopped the older one (PID 39852). The bot was offline for a few minutes in between.
+- **Verified:** 2026-10-31 — `Get-ScheduledTask` and `Get-CimInstance Win32_Process -Filter "name='readurlist.exe'"`: the task runs `"C:\apps\ReadURList\docs\run-worker-hidden.vbs"` with Start in `C:\apps\ReadURList\`, last result 0; exactly one `readurlist.exe` (PID 29660) from `C:\apps\ReadURList\.venv\Scripts\`. Owner confirmed the bot works ("working now"). Dev folder switched to `main` at `53e0f28`.
+  2026-11-01 — (c): `npx supabase@2.122.0 init` then `start`: all 5 migrations applied in order; `docker exec supabase_db_ReadURList psql … information_schema.tables`: `daily_picks` 0, `digest_runs` 0, `items` 0 rows; 12 `supabase_` containers running.
+  2026-11-01 — (d): owner confirmed "(d) done"; the build chat's check of which hosts the key files point at was refused by the permission system, so it rests on the owner's word (R-0002). (g): `uv sync --extra dev` then `uv run pytest -q`: 62 passed. The dev `.venv` had a leftover `sqlalchemy-2.0.52.dist-info` with no RECORD file that made every `uv run` re-sync; removed it, then `uv sync --extra dev` reports "Checked 48 packages" with no changes. `web/`: `npm ci`, `npm run build`: built, 10 routes, no errors.
+  2026-11-01 — (f): `npx supabase@2.122.0 db reset --local`: migrations plus "Seeding data from supabase/seed.sql"; `psql` counts: 18 items (12 ready to read, 3 of them over 3,450 words; 3 waiting on Unfetched; 2 read; 1 skipped), 0 links outside example.com / example.org. (h): README §Worker → "Dev and live" (table of the two setups, dev database commands, deploy order); README §Tests now says dev folder only, with `uv run pytest -q` and the website build.
+  2026-11-01 — (e): owner's Vercel screenshots: Settings → Environments shows Production tracking `main`, Preview "All unassigned git branches"; Settings → Environment Variables lists exactly `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_URL`, `SITE_PASSWORD`, each scoped to Production only.
 
 ### Stage 1 — Save links from Telegram
 - **What gets built:** You paste one or more links into a private Telegram bot from any device; it saves them and replies with a short summary so you can see the save worked. Only your Telegram account is listened to.
@@ -275,7 +282,17 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 
 ## Blocks
 
-None.
+### B1 — Stage 0: no room for a dev Supabase project (2026-11-01)
+- **What is blocked:** task (c), creating a dev Supabase project.
+- **Why it happened:** Supabase's free plan allows 2 active projects; you have 2, clipr and readurlist. Paused projects don't count.
+- **Terms, as a reminder:** Docker — a program that runs a self-contained copy of a service on this PC; here, all of Supabase (database plus the interface the website reads through), not just the database.
+- **Options:**
+  - **A.** A local copy of Supabase on this PC, in Docker → free and fully apart; previews lose their data, so website changes are checked on this PC.
+  - **B.** Pause clipr while readurlist is built → plan unchanged; clipr offline until restored, swap each time it's needed.
+  - **C.** Supabase Pro plan → plan unchanged; $25/month plus about $10/month per project.
+  - **D.** Dev tables inside the live project → not apart; ruled out by R-0009.
+- **Recommendation:** A, because it's free, apart from live, and doesn't depend on clipr or a bill.
+- **Decision:** owner, 2026-11-01: "A: local on this PC". Changes stage 0 tasks (c), (d), (e) and (h).
 
 ## Open questions
 
@@ -299,7 +316,7 @@ None.
 **Dev** — where agents build and test: this folder, the dev bot, the dev database and website previews · R-0009 · nothing done there reaches you until you deploy.
 **Live** — what you use every day: the worker running from the live copy, your real bot, the real database and the production website · R-0009 · agents never touch it.
 **Migration** — a file that changes the database's shape (e.g. adds a column) · README §Worker; R-0009 §What "apart" means · reaches live only when you apply it at deploy.
-**Preview** — a test build of the website for a branch, on its own address, using dev data · R-0009 §What "apart" means · how you look at a website change before it goes live.
+**Preview** — a test build of the website for a branch, on its own address · R-0009 §What "apart" means · here it gets no database keys (the dev database is on this PC), so you look at a website change on this PC before it goes live.
 **Allowlist** — the one Telegram account the bot listens to; everyone else is ignored · README §Telegram bot setup · keeps the app single-user.
 **Daily job** — the run once a day that reads filled-in pages, scores the pile and builds the list · README §Worker · stages 6 and 8 hang off it.
 **Effort label** — new: short or long, with an estimated reading time · Brainstorm §What isn't working 3 · drives the two sections.
@@ -329,6 +346,7 @@ None.
 | Stage | What the owner explained back or predicted | Confirmed against | Date |
 |---|---|---|---|
 | 0 Separate dev from live | Stage 0 done, agent building stage 4 in dev, owner saves a link from the phone: "live bot and live db / no / when dev gets cloned into live". First two match. Third corrected: dev is never copied into live; stage 4 reaches live when the owner deploys it (backup and migrate live, merge to main, `git pull` in the live copy, restart, run the labelling). | R-0009 §What "apart" means, §On the map | 2026-10-31 |
+| 0 Separate dev from live (changed 2026-11-01) | A Today page change built in dev, not yet deployed: where do you see it, and what if Docker isn't running? Owner: "on this local computer / dev cannot access supabase. Nothing happens to live bot and website." Both match: previews have no database, and live runs from the live copy and the live Supabase project, not Docker. | B1 decision; R-0009 §What "apart" means | 2026-11-01 |
 | 1 Save links from Telegram | Three links, third paywalled: "i will get 3 responses back - all saying that the link is saved but the first 2 will show a short summary and the 3rd will show a saved link but a short summary cannot be extracted and will be in unfetched". Matches; added: replies come in order labelled 1/3, 2/3, 3/3, and the third carries a link to the Unfetched page. | README §Using the bot ("Sequential n/N snapshots. Fetch/extract failure → stub + Unfetched link") | 2026-10-31 |
 | 2 Read each page safely | Hidden white-on-white instruction. First answer: "hidden text is cleaned before the qroq model sees it so the hidden text mshould not work" (wrong: cleaning removes invisible characters, not colour-hidden text). Second answer: "the hidden line (white-on-white) can tell make it through as data which the model is less likely to obey. However, because of the wrapper, it cannot visit the site or send a message. Its impact is limited to text output". Matches, with one correction: the wrapper only makes obeying less likely; it is having no tools that stops visiting or sending, and "text output" includes the fields of the form, such as a priority of 5. | R-0003 layers 2–3 | 2026-10-31 |
 | 3 Fill in pages that couldn't be fetched | 2 MB PDF uploaded at 2pm, daily job at 7am: "after the 7am daily job. A pdf or pasted text has to be inputted on unfetched and have the link queued to be processed before the job will pick it up". Matches; added: it is hidden from Today and All until then, `/digest` would bring it in sooner, and the job runs it through stage 2 including the tripwire, so it could come back "held". | README §Website ("Stubs are hidden from Today and All until ingest completes"), README §Using the bot | 2026-10-31 |

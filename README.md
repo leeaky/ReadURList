@@ -162,6 +162,38 @@ python scripts/migrate_sqlite.py ./data/old.sqlite
 
 `DATABASE_URL` must already point at Postgres.
 
+### Dev and live
+
+Two copies, kept apart. Agents work only in dev; only the owner changes live.
+
+| | Live | Dev |
+|---|---|---|
+| Folder | `C:\apps\ReadURList`, on `main`, run by the "ReadURList Worker" task | `C:\dev\ReadURList`, any branch |
+| Telegram bot | the real bot | a second bot (picture: [`docs/dev-bot-logo.png`](docs/dev-bot-logo.png)) |
+| Database | the Supabase project | local Supabase in Docker on this PC |
+| Groq key | live key | a separate dev key |
+| Website | Vercel production, built only from `main` | `npm run dev` in `web/`, at `http://localhost:3000` |
+
+Vercel previews get no database keys (the live ones are set for Production only, and the dev database isn't reachable from Vercel), so previews show no data. Check website changes locally.
+
+**Dev database.** Start Docker Desktop, then from `C:\dev\ReadURList`:
+
+```bash
+npx supabase@2.122.0 start
+```
+
+It applies every file in `supabase/migrations/`. `npx supabase@2.122.0 db reset --local` wipes it and reloads the made-up sample items in [`supabase/seed.sql`](supabase/seed.sql). `npx supabase@2.122.0 status -o env` prints the local values for `.env` (`DATABASE_URL`, with `postgresql+psycopg://`) and `web/.env.local` (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`). `npx supabase@2.122.0 stop` shuts it down. Never copy live data into dev.
+
+**Deploy order** (owner only), for a change that touches the database:
+
+1. Back up the live database (see [Backup](#backup)).
+2. Apply the new file(s) in `supabase/migrations/` to live. Migrations must work with the code already live: add, never rename or drop, in the same change.
+3. Merge to `main`. Vercel deploys the website.
+4. In `C:\apps\ReadURList`: `git pull`, `uv sync`, then restart the "ReadURList Worker" task.
+5. Check the change works on the live bot or website.
+
+Without a database change, skip steps 1–2.
+
 ## Website (Vercel)
 
 App lives in [`web/`](web/). In Vercel: **Root Directory** = `web`. Env:
@@ -199,9 +231,12 @@ Change Groq model: set `MODEL_INGEST` in `.env` and restart. Default is `openai/
 
 ## Tests
 
+In the dev folder only (never in the live folder: `uv` re-syncs the environment the worker runs from):
+
 ```bash
-source .venv/bin/activate
-pytest -q
+uv sync --extra dev
+uv run pytest -q
+cd web && npm ci && npm run build
 ```
 
 CI runs pytest on push. Website builds on Vercel.
