@@ -171,7 +171,7 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
   - [x] (b) Items saved before this stage get the label too.
     Detail: one-off backfill over existing ready items. Built: `readurlist-effort-backfill` fills `word_count` from the stored text for ready items that lack it; safe to run twice.
   - [ ] (c) Deploy (you): back up the live database and apply this stage's database change, then merge to main, update and restart the live worker, run the one-off labelling and check a few items show short or long.
-    Detail: backup → migration → merge → `git pull`, `uv sync`, restart the task in `C:/apps/readurlist` → run the backfill command the stage adds, from `C:/apps/readurlist`.
+    Detail: backup → migration → merge → `git pull`, `uv sync`, restart the task in `C:/apps/readurlist` → run the backfill the stage adds, from `C:/apps/readurlist`: `.venv\Scriptseadurlist-effort-backfill.exe` (not `uv run`, which re-syncs the live environment: I1).
 - **How we know:** on the local database all 18 ready items have a word count after the backfill, 15 short and 3 long, and the 3 long ones are the 3 sample texts written to be over 3,450 words.
 - **Issues:** none
 - **Verified:** 2026-11-01 — `uv run pytest -q`: 96 passed (boundaries: 3,449 words short, 3,450 long). Local database: `npx supabase@2.122.0 migration up --local` applied `20261101000000_word_count.sql`; `readurlist-effort-backfill`: "Labelled 18 items.", again: "Labelled 0 items."; `psql`: ready 18, with a count 18, long 3, short 15; Unfetched items 0 with a count.
