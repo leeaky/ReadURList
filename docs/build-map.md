@@ -206,20 +206,22 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 - **Depends on:** Stages 4, 5
 - **Produces:** the day's list, for the Today page (stage 7), Telegram (stage 8) and the success check (stage 10).
 - **Terms:** Daily job, Effort label, Fallen off, Skip
-- **Status:** not started
+- **Status:** in progress
 - **Changed:** 2026-10-31 — Deploy task added for the owner (R-0009 §On the map); built only in dev from now on (stage 0). Deploy order set by the owner the same day: backup and migrate live before merging.
 - **Tasks:**
-  - [ ] (a) The day's list has a short section and a long section, each sized to an agreed amount of time.
-    Detail: 3 short picks + 1 long pick. Owner, 2026-10-31: "A" (options were 3+1 / 2+1 / 5+2).
-  - [ ] (b) Each dropped link is listed with its reason: you read it, you skipped it, or something else outscored it.
-    Detail: compare today's picks to yesterday's (stage 5 b).
-  - [ ] (c) The list still avoids being a recap of one save: it spreads across subjects.
-    Detail: Context §What this is NOT, "not a recap machine".
-  - [ ] (d) When no long read is ready, the long section says so and points to the papers waiting on Unfetched.
-    Detail: e.g. "No long read ready. 6 papers are waiting on Unfetched" with a link. Owner, 2026-10-31: "A" (options were: that line / leave the section out / a 4th short pick) (Q8).
+  - [x] (a) The day's list has a short section and a long section, each sized to an agreed amount of time.
+    Detail: 3 short picks + 1 long pick. Owner, 2026-10-31: "A" (options were 3+1 / 2+1 / 5+2). Built: `rank/score.py` `build_day_list` replaces the old top 5: highest scores first, each into its section by the stage 4 label (no word count counts as short); `daily_picks.section` stores it (migration `20261103000000_day_list.sql`, add-only). Tests: `test_day_list.py`.
+  - [x] (b) Each dropped link is listed with its reason: you read it, you skipped it, or something else outscored it.
+    Detail: compare today's picks to yesterday's (stage 5 b). Built: new table `fallen_off` (same migration): for each link on the most recent earlier list that isn't on today's, its cause (`read`, `skipped`, `outscored`, `subject_full`, or `gone` if deleted) and points before and after; rebuilt with the day's list. Tests: `test_fallen_off.py`.
+  - [x] (c) The list still avoids being a recap of one save: it spreads across subjects.
+    Detail: Context §What this is NOT, "not a recap machine". Built: at most two per subject across both sections together. Test: `test_day_list.py::test_two_per_subject_across_both_sections`.
+  - [x] (d) When no long read is ready, the long section says so and points to the papers waiting on Unfetched.
+    Detail: e.g. "No long read ready. 6 papers are waiting on Unfetched" with a link. Owner, 2026-10-31: "A" (options were: that line / leave the section out / a 4th short pick) (Q8). Built in the Telegram list: "No long read ready. N papers are waiting on Unfetched: <site>/unfetched", N = items waiting for text. The Telegram list now has Short reads, Long read and "Fallen off since the last list"; stage 8 reworks its wording and removes the buttons, and stage 7 puts the same sections on Today. Tests: `test_day_message.py`.
   - [ ] (e) Deploy (you): back up the live database and apply any database change, then merge to main, update and restart the live worker, and check the next daily list has a short section, a long section and a fallen-off list.
-    Detail: backup and migration only if the stage adds one, always before the merge → worker update as in stage 2.
+    Detail: this stage adds one: `scripts/live-db-deploy.ps1 20261103000000_day_list.sql` before the merge → merge → worker update as in stage 2. Note: `/digest` re-ranks but doesn't resend if today's list was already sent, so the check is on the next daily list.
+- **How we know:** on the local database the list has 3 short picks and 1 long, no subject more than twice, and an item marked read after yesterday's list shows under Fallen off as "you read it".
 - **Issues:** none
+- **Verified:** 2026-11-01 — `uv run pytest -q`: 114 passed. Local database: `migration up --local` applied `20261103000000_day_list.sql`; built yesterday's list, marked its first pick read, built today's: Short reads 3 ("You keep saving Programming: 5 unread (subject 65 + recency 34 = 99)" …), Long read 1 ("You keep saving Gardening: 4 unread (subject 52 + recency 2 = 54)"), Fallen off: "https://example.com/code/small-functions — you read it".
 
 ### Stage 7 — Today page on the website
 - **What gets built:** The website's Today page shows the short and long sections with each pick's reason, laid out to read well on a phone.
