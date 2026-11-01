@@ -4,7 +4,8 @@ import logging
 import random
 import re
 import time
-from urllib.parse import urlparse
+from html.parser import HTMLParser
+from urllib.parse import urljoin, urlparse
 
 import httpx
 import trafilatura
@@ -48,6 +49,27 @@ class ExtractError(Exception):
 
 def find_urls(text: str) -> list[str]:
     return URL_RE.findall(text or "")
+
+
+class _PdfTag(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.href: str | None = None
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        a = dict(attrs)
+        if tag == "meta" and self.href is None and (a.get("name") or "").lower() == "citation_pdf_url":
+            self.href = (a.get("content") or "").strip() or None
+
+
+def pdf_link(html: str, page_url: str) -> str | None:
+    """The paper's PDF named in the page's citation_pdf_url tag (build map stage 12)."""
+    parser = _PdfTag()
+    parser.feed(html or "")
+    if not parser.href:
+        return None
+    href = urljoin(page_url, parser.href)
+    return href if urlparse(href).scheme in ("http", "https") else None
 
 
 def _retry_after_seconds(response: httpx.Response, attempt: int) -> float:
@@ -127,8 +149,8 @@ def _fetch_html(url: str, timeout: float) -> str:
     raise FetchError(f"Could not fetch page after {_MAX_ATTEMPTS} attempts: {last_exc}")
 
 
-def extract_article(url: str, timeout: float = 30.0) -> tuple[str, str]:
-    """Fetch URL and extract main text. Returns (title, text). Raises on failure."""
+def extract_article(url: str, timeout: float = 30.0) -> tuple[str, str, str | None]:
+    """Fetch URL and extract main text. Returns (title, text, pdf link or None). Raises on failure."""
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https"):
         raise ValueError(f"Unsupported URL scheme: {parsed.scheme}")
@@ -152,4 +174,4 @@ def extract_article(url: str, timeout: float = 30.0) -> tuple[str, str]:
             title=title.strip() or url,
         )
 
-    return title.strip(), extracted.strip()
+    return title.strip(), extracted.strip(), pdf_link(html, url)

@@ -25,6 +25,7 @@ readurlist = "readurlist.main:main"
 readurlist-digest = "readurlist.rank.run:main"
 readurlist-effort-backfill = "readurlist.effort:main"
 readurlist-arxiv-lengths = "readurlist.ingest.arxiv:main"
+readurlist-paper-lengths = "readurlist.ingest.arxiv:paper_pages_main"
 
 [build-system]
 requires = ["setuptools>=68"]

@@ -334,6 +334,25 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 - **Verified:** 2026-11-01 — `uv run pytest -q`: 136 passed. Local database, real link `https://arxiv.org/abs/1706.03762`: saved ready, title "Attention Is All You Need", abstract 346 words, stored 6,111 words → long, 27 min. Reset to 346 and ran `readurlist-arxiv-lengths`: "counted from their PDF: 2; kept the abstract count: 0"; item back to 6,111.
   2026-11-01 — Deploy: no database change; owner merged #19 (`da90cf4`) and ran `scripts/live-worker-update.ps1`; one live `readurlist.exe`, PID 7204, started 16:26, task result 0. Owner ran `readurlist-arxiv-lengths` in the live folder: "arXiv papers counted from their PDF: 82; kept the abstract count: 2". Both had no PDF (HTTP 404): 2608.00858, withdrawn by its author, shows "Short · 1 min" on All; and 2603.28371, also withdrawn (owner checked). The run also printed pypdf font and figure warnings; counts unaffected.
 
+### Stage 12 — Papers from other sites get their real length
+- **What gets built:** A saved page that names its paper's PDF in the standard `citation_pdf_url` tag (journals, bioRxiv, SSRN, OpenReview and most paper sites) gets its reading time from that PDF, as arXiv papers do since stage 11.
+- **Why:** Owner, asked whether they save papers from sites other than arXiv: "Yes, some"; chose "Any page with a PDF tag" over a fixed list of sites (Chat 2026-11-01).
+- **Depends on:** Stage 11
+- **Produces:** correct Short / Long labels and sections for papers saved from paper sites.
+- **Terms:** Effort label
+- **Status:** in progress
+- **Changed:** 2026-11-01 — Stage added at the owner's request after stage 11. For papers already saved, the owner chose to recheck only items shown as Short ("Only items shown as Short").
+- **Tasks:**
+  - [x] (a) A new link whose page names its PDF in the standard citation tag is counted from that PDF; title and summary still come from the page.
+    Detail: the tag is `citation_pdf_url`. Same rules as stage 11: PDF up to 40 MB, its text is counted and not kept, never shown to the model; if the PDF can't be fetched or read (some sites block downloads), the page's count is kept and one line says why. Detail: built: `extract.pdf_link` reads the tag (relative links resolved, http(s) only); `extract_article` now also returns it; `arxiv.pdf_word_count` counts any PDF with stage 11's rules; an arXiv link never falls through to its abstract page's tag. Tests: `test_paper_pdf.py`, `test_arxiv.py`.
+  - [x] (b) Saved non-arXiv items shown as Short get their length fixed once.
+    Detail: a one-off command the owner runs on the live folder after the deploy; it re-reads each Short item's page for the tag, pausing between pages, and recounts only those that have one. Detail: built: `readurlist-paper-lengths` (ready, non-arXiv, Short only; 2 seconds between pages; prints counted / no PDF tag / kept). Test: `test_paper_pdf.py::test_one_off_fix_rechecks_short_paper_pages`.
+  - [ ] (c) Deploy (you): merge to main, update and restart the live worker, run the one-off fix, then check a paper from another site on All shows its real minutes.
+    Detail: no database change; merge → `scripts/live-worker-update.ps1` → one-off fix in the live folder.
+- **How we know:** on the local database, saving a paper page with a `citation_pdf_url` tag stores the PDF's word count while the summary matches the page; the one-off fix turns an old Short paper item Long and leaves a plain Short article as it was.
+- **Issues:** none
+- **Verified:** 2026-11-01 — `uv run pytest -q`: 154 passed. Local database, real link `https://aclanthology.org/N19-1423/`: saved ready, title "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding", page 1,062 words, stored 10,160 words → long, 44 min. Reset to the page count and ran the one-off fix: counted 1, no PDF tag 1, kept 13 (local test items on example.com, each one line "page could not be fetched"); item back to 10,160.
+
 ## Blocks
 
 ### B1 — Stage 0: no room for a dev Supabase project (2026-11-01)

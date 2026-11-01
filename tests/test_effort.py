@@ -46,7 +46,7 @@ def test_a_read_page_stores_its_word_count(tmp_path, monkeypatch):
     init_db(db)
     monkeypatch.setattr(
         "readurlist.ingest.extract_article",
-        lambda url, timeout=30.0: ("Title", "compost " * 500),
+        lambda url, timeout=30.0: ("Title", "compost " * 500, None),
     )
     item, _ = ingest_url("https://example.com/a", FakeLLM(), _settings(db))  # type: ignore[arg-type]
     assert item.word_count == 500

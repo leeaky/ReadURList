@@ -3,7 +3,7 @@ from __future__ import annotations
 from readurlist.config import Settings
 from readurlist.db import Item, get_session
 from readurlist.effort import word_count
-from readurlist.ingest.arxiv import abs_url, arxiv_id, paper_word_count
+from readurlist.ingest.arxiv import abs_url, arxiv_id, paper_word_count, pdf_word_count
 from readurlist.ingest.extract import ExtractError, FetchError, extract_article
 from readurlist.ingest.summarize import summarize_article
 from readurlist.ingest.untrusted import assess
@@ -62,6 +62,15 @@ def _save_stub(
         session.close()
 
 
+def _paper_words(url: str, paper_id: str | None, pdf_url: str | None) -> int | None:
+    """Words in the full paper (stages 11 and 12), or None to keep the page's count."""
+    if paper_id:
+        return paper_word_count(paper_id)
+    if pdf_url:
+        return pdf_word_count(pdf_url, page_url=url)
+    return None
+
+
 def ingest_url(
     url: str,
     llm: LLMProvider,
@@ -90,7 +99,7 @@ def ingest_url(
     paper_id = arxiv_id(url)
     try:
         # An arXiv link of any form is read from its abstract page.
-        title_hint, text = extract_article(abs_url(paper_id) if paper_id else url)
+        title_hint, text, pdf_url = extract_article(abs_url(paper_id) if paper_id else url)
     except FetchError as exc:
         return _save_stub(url=url, title=url, note=str(exc), note_clean=note_clean)
     except ExtractError as exc:
@@ -137,7 +146,7 @@ def ingest_url(
             topics=list(result.topics),
             keywords=list(result.keywords),
             extracted_text=text,
-            word_count=(paper_id and paper_word_count(paper_id)) or word_count(text),
+            word_count=_paper_words(url, paper_id, pdf_url) or word_count(text),
             priority=result.priority,
             note=note_clean,
             ingest_status=INGEST_READY,

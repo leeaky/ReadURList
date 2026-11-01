@@ -28,7 +28,7 @@ def _settings(db: str) -> Settings:
 def _setup(tmp_path, monkeypatch, text: str):
     db = f"sqlite:///{tmp_path / 't.db'}"
     init_db(db)
-    monkeypatch.setattr("readurlist.ingest.extract_article", lambda url, timeout=30.0: ("Title", text))
+    monkeypatch.setattr("readurlist.ingest.extract_article", lambda url, timeout=30.0: ("Title", text, None))
     return db
 
 

@@ -3,6 +3,8 @@
 The abstract page gives the title and the text the summary is written from, as for
 any page. The PDF is downloaded only to count its words; its text is never stored or
 shown to the model (owner, 2026-11-01: "Abstract, length from paper").
+
+Stage 12 does the same for any page naming its PDF in the citation_pdf_url tag.
 """
 from __future__ import annotations
 
@@ -40,12 +42,24 @@ def abs_url(paper_id: str) -> str:
 
 
 def paper_word_count(paper_id: str) -> int | None:
-    """Words in the paper's PDF, or None if it can't be fetched or read."""
-    url = f"https://arxiv.org/pdf/{paper_id}"
+    """Words in the arXiv paper's PDF, or None if it can't be fetched or read."""
 
     def skip(reason: str) -> None:
         logger.warning("arXiv %s (%s): %s; kept the abstract count", paper_id, abs_url(paper_id), reason)
 
+    return _pdf_words(f"https://arxiv.org/pdf/{paper_id}", skip)
+
+
+def pdf_word_count(pdf_url: str, *, page_url: str) -> int | None:
+    """Words in the PDF a paper page names (build map stage 12), or None."""
+
+    def skip(reason: str) -> None:
+        logger.warning("Paper %s (PDF %s): %s; kept the page count", page_url, pdf_url, reason)
+
+    return _pdf_words(pdf_url, skip)
+
+
+def _pdf_words(url: str, skip) -> int | None:
     try:
         with httpx.Client(follow_redirects=True, timeout=_TIMEOUT, transport=_TRANSPORT) as client:
             with client.stream("GET", url) as response:
@@ -103,6 +117,51 @@ def fix_saved_papers(*, sleep=time.sleep) -> tuple[int, int]:
         session.close()
 
 
+def fix_saved_paper_pages(*, sleep=time.sleep) -> tuple[int, int, int]:
+    """One-off (stage 12): recheck saved non-arXiv items shown as Short for a PDF tag.
+
+    Returns (counted from their PDF, no PDF tag, kept the page count)."""
+    from readurlist.db import Item, get_session
+    from readurlist.effort import effort
+    from readurlist.ingest import extract
+
+    session = get_session()
+    try:
+        rows = [
+            row
+            for row in session.query(Item).filter(Item.ingest_status == "ready").order_by(Item.id)
+            if row.word_count is not None and effort(row.word_count)[0] == "short" and not arxiv_id(row.url)
+        ]
+        fixed = no_tag = failed = 0
+        for n, row in enumerate(rows):
+            if n:
+                sleep(2.0)  # a polite pause between pages
+            try:
+                html = extract._fetch_html(row.url, timeout=30.0)
+            except extract.FetchError as exc:
+                why = f"HTTP {exc.status_code}" if exc.status_code else "no answer"
+                logger.warning("Paper %s: page could not be fetched (%s); kept the page count", row.url, why)
+                failed += 1
+                continue
+            pdf_url = extract.pdf_link(html, row.url)
+            if not pdf_url:
+                no_tag += 1
+                continue
+            words = pdf_word_count(pdf_url, page_url=row.url)
+            if words is None:
+                failed += 1
+                continue
+            row.word_count = words
+            session.commit()
+            fixed += 1
+        return fixed, no_tag, failed
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
 def main() -> None:
     """CLI: `readurlist-arxiv-lengths` — fix the length of arXiv papers saved before stage 11."""
     from readurlist.config import get_settings
@@ -111,3 +170,13 @@ def main() -> None:
     init_db(get_settings().database_url)
     fixed, failed = fix_saved_papers()
     print(f"arXiv papers counted from their PDF: {fixed}; kept the abstract count: {failed}")
+
+
+def paper_pages_main() -> None:
+    """CLI: `readurlist-paper-lengths` — fix the length of Short paper pages saved before stage 12."""
+    from readurlist.config import get_settings
+    from readurlist.db import init_db
+
+    init_db(get_settings().database_url)
+    fixed, no_tag, failed = fix_saved_paper_pages()
+    print(f"Short items counted from their PDF: {fixed}; no PDF tag: {no_tag}; kept the page count: {failed}")

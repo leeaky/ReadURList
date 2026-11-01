@@ -20,7 +20,7 @@ def test_same_url_does_not_insert_second_item(tmp_path, monkeypatch):
     init_db(f"sqlite:///{db}")
 
     def fake_extract(url: str, timeout: float = 30.0):
-        return "Example", "x" * 200
+        return "Example", "x" * 200, None
 
     monkeypatch.setattr("readurlist.ingest.extract_article", fake_extract)
     monkeypatch.setattr("readurlist.ingest.summarize_article", lambda *a, **k: __import__(
