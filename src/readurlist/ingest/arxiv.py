@@ -16,7 +16,7 @@ import time
 import httpx
 from pypdf import PdfReader
 
-from readurlist.effort import word_count
+from readurlist.effort import WORDS_PER_MINUTE, word_count
 
 logger = logging.getLogger(__name__)
 # pypdf reports every odd font or figure it meets; the count doesn't need them.
@@ -30,6 +30,10 @@ _ARXIV = re.compile(
 _MAX_PDF_BYTES = 40 * 1024 * 1024
 _TIMEOUT = 60.0
 _TRANSPORT: httpx.BaseTransport | None = None  # tests swap in a fake
+# A page names a paper but its PDF can't be read: assume long (owner, 2026-11-01:
+# "assume long and put '>45 min' as a placeholder"; chose a stand-in count).
+PAPER_STAND_IN_MINUTES = 45
+PAPER_STAND_IN_WORDS = PAPER_STAND_IN_MINUTES * WORDS_PER_MINUTE
 
 
 def arxiv_id(url: str) -> str | None:
@@ -51,10 +55,12 @@ def paper_word_count(paper_id: str) -> int | None:
 
 
 def pdf_word_count(pdf_url: str, *, page_url: str) -> int | None:
-    """Words in the PDF a paper page names (build map stage 12), or None."""
+    """Words in the PDF a paper page names (build map stage 12), or None.
+
+    Callers then store PAPER_STAND_IN_WORDS: the page names a paper, so it is long."""
 
     def skip(reason: str) -> None:
-        logger.warning("Paper %s (PDF %s): %s; kept the page count", page_url, pdf_url, reason)
+        logger.warning("Paper %s (PDF %s): %s; counted as %s min", page_url, pdf_url, reason, PAPER_STAND_IN_MINUTES)
 
     return _pdf_words(pdf_url, skip)
 
@@ -117,10 +123,10 @@ def fix_saved_papers(*, sleep=time.sleep) -> tuple[int, int]:
         session.close()
 
 
-def fix_saved_paper_pages(*, sleep=time.sleep) -> tuple[int, int, int]:
+def fix_saved_paper_pages(*, sleep=time.sleep) -> tuple[int, int, int, int]:
     """One-off (stage 12): recheck saved non-arXiv items shown as Short for a PDF tag.
 
-    Returns (counted from their PDF, no PDF tag, kept the page count)."""
+    Returns (counted from their PDF, counted as 45 min, no PDF tag, kept the page count)."""
     from readurlist.db import Item, get_session
     from readurlist.effort import effort
     from readurlist.ingest import extract
@@ -132,7 +138,7 @@ def fix_saved_paper_pages(*, sleep=time.sleep) -> tuple[int, int, int]:
             for row in session.query(Item).filter(Item.ingest_status == "ready").order_by(Item.id)
             if row.word_count is not None and effort(row.word_count)[0] == "short" and not arxiv_id(row.url)
         ]
-        fixed = no_tag = failed = 0
+        fixed = stand_in = no_tag = failed = 0
         for n, row in enumerate(rows):
             if n:
                 sleep(2.0)  # a polite pause between pages
@@ -149,12 +155,13 @@ def fix_saved_paper_pages(*, sleep=time.sleep) -> tuple[int, int, int]:
                 continue
             words = pdf_word_count(pdf_url, page_url=row.url)
             if words is None:
-                failed += 1
-                continue
+                words = PAPER_STAND_IN_WORDS
+                stand_in += 1
+            else:
+                fixed += 1
             row.word_count = words
             session.commit()
-            fixed += 1
-        return fixed, no_tag, failed
+        return fixed, stand_in, no_tag, failed
     except Exception:
         session.rollback()
         raise
@@ -178,5 +185,8 @@ def paper_pages_main() -> None:
     from readurlist.db import init_db
 
     init_db(get_settings().database_url)
-    fixed, no_tag, failed = fix_saved_paper_pages()
-    print(f"Short items counted from their PDF: {fixed}; no PDF tag: {no_tag}; kept the page count: {failed}")
+    fixed, stand_in, no_tag, failed = fix_saved_paper_pages()
+    print(
+        f"Short items counted from their PDF: {fixed}; counted as {PAPER_STAND_IN_MINUTES} min "
+        f"(PDF unreadable): {stand_in}; no PDF tag: {no_tag}; kept the page count: {failed}"
+    )

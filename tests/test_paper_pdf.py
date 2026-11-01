@@ -38,7 +38,7 @@ def test_a_blocked_pdf_is_one_plain_line(monkeypatch, caplog):
     with caplog.at_level("WARNING"):
         assert pdf_word_count(PDF, page_url=PAGE) is None
     assert [r.getMessage() for r in caplog.records if r.name.startswith("readurlist")] == [
-        f"Paper {PAGE} (PDF {PDF}): PDF not found (HTTP 404); kept the page count"
+        f"Paper {PAGE} (PDF {PDF}): PDF not found (HTTP 404); counted as 45 min"
     ]
 
 
@@ -80,9 +80,12 @@ def test_a_paper_page_takes_its_length_from_its_pdf(tmp_path, monkeypatch):
     assert "We study compost." in item.extracted_text  # the page's text is kept, not the PDF's
 
 
-def test_a_paper_page_keeps_its_count_when_the_pdf_fails(tmp_path, monkeypatch):
+def test_a_paper_page_counts_as_45_min_when_the_pdf_fails(tmp_path, monkeypatch):
+    from readurlist.effort import effort
+
     item, _ = _ingest(tmp_path, monkeypatch, PDF, None)
-    assert item.word_count == 120
+    assert item.word_count == 45 * 230  # owner, 2026-11-01: a paper is long; stand-in length
+    assert effort(item.word_count) == ("long", 45)
 
 
 def test_a_page_without_the_tag_fetches_no_pdf(tmp_path, monkeypatch):
@@ -103,7 +106,7 @@ def test_one_off_fix_rechecks_short_paper_pages(tmp_path, monkeypatch, caplog):
     for url, status, words in [
         ("https://journal.org/paper", "ready", 120),  # Short, has a tag: fixed
         ("https://blog.org/post", "ready", 900),  # Short, no tag: left alone
-        ("https://journal.org/blocked", "ready", 150),  # Short, PDF blocked: kept
+        ("https://journal.org/blocked", "ready", 150),  # Short, PDF blocked: 45 min stand-in
         ("https://gone.org/page", "ready", 200),  # Short, page gone: kept
         ("https://journal.org/long", "ready", 5000),  # Long: not rechecked
         ("https://arxiv.org/abs/2410.00001", "ready", 120),  # arXiv: stage 11's fix
@@ -138,7 +141,7 @@ def test_one_off_fix_rechecks_short_paper_pages(tmp_path, monkeypatch, caplog):
     assert "Paper https://gone.org/page: page could not be fetched (HTTP 404); kept the page count" in [
         r.getMessage() for r in caplog.records
     ]
-    assert result == (1, 1, 2)  # counted from their PDF, no PDF tag, kept the page count
+    assert result == (1, 1, 1, 1)  # counted from their PDF, counted as 45 min, no PDF tag, kept the page count
     assert fetched == ["https://journal.org/paper", "https://blog.org/post",
                        "https://journal.org/blocked", "https://gone.org/page"]
     assert waits == [2.0, 2.0, 2.0]
@@ -147,5 +150,5 @@ def test_one_off_fix_rechecks_short_paper_pages(tmp_path, monkeypatch, caplog):
     session.close()
     assert words["https://journal.org/paper"] == 8000
     assert words["https://blog.org/post"] == 900
-    assert words["https://journal.org/blocked"] == 150
+    assert words["https://journal.org/blocked"] == 45 * 230
     assert words["https://gone.org/page"] == 200

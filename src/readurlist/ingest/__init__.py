@@ -3,7 +3,7 @@ from __future__ import annotations
 from readurlist.config import Settings
 from readurlist.db import Item, get_session
 from readurlist.effort import word_count
-from readurlist.ingest.arxiv import abs_url, arxiv_id, paper_word_count, pdf_word_count
+from readurlist.ingest.arxiv import PAPER_STAND_IN_WORDS, abs_url, arxiv_id, paper_word_count, pdf_word_count
 from readurlist.ingest.extract import ExtractError, FetchError, extract_article
 from readurlist.ingest.summarize import summarize_article
 from readurlist.ingest.untrusted import assess
@@ -67,7 +67,7 @@ def _paper_words(url: str, paper_id: str | None, pdf_url: str | None) -> int | N
     if paper_id:
         return paper_word_count(paper_id)
     if pdf_url:
-        return pdf_word_count(pdf_url, page_url=url)
+        return pdf_word_count(pdf_url, page_url=url) or PAPER_STAND_IN_WORDS
     return None
 
 
