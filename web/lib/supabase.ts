@@ -25,6 +25,7 @@ export type ItemRow = {
   ingest_status?: string;
   extracted_text?: string | null;
   note?: string | null;
+  word_count?: number | null;
 };
 
 export type DailyPickRow = {
@@ -33,5 +34,16 @@ export type DailyPickRow = {
   rank: number;
   score: number;
   reason: string;
+  section?: string | null;
+  subject_points?: number | null;
+  recency_points?: number | null;
   items: ItemRow | ItemRow[] | null;
+};
+
+export type FallenOffRow = {
+  item_id: number;
+  cause: string;
+  points_before: number;
+  points_after: number | null;
+  items: Pick<ItemRow, "url" | "title"> | Pick<ItemRow, "url" | "title">[] | null;
 };

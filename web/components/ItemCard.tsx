@@ -23,11 +23,15 @@ function formatDate(iso: string | null) {
 export function ItemCard({
   item,
   reason,
+  points,
+  readTime,
   rank,
   subjects,
 }: {
   item: ItemRow;
   reason?: string;
+  points?: string | null;
+  readTime?: string | null;
   rank?: number;
   subjects: string[];
 }) {
@@ -98,11 +102,18 @@ export function ItemCard({
             ) : null}
             {read ? <span className="read-label text-muted">Read</span> : null}
             {skipped && !read ? <span className="read-label text-muted">Skipped</span> : null}
+            {readTime ? <span className="read-label text-muted">{readTime}</span> : null}
           </div>
           <div className="article-title">
             {item.title || item.url}
           </div>
           {item.snapshot ? <p className="article-teaser text-muted">{item.snapshot}</p> : null}
+          {reason ? (
+            <p className="article-why text-muted">
+              Why: {reason}
+              {points ? <span className="article-points"> · {points}</span> : null}
+            </p>
+          ) : null}
         </div>
         <svg
           className={expanded ? "article-chevron is-open" : "article-chevron"}
@@ -230,7 +241,6 @@ export function ItemCard({
           ) : (
             <>
               {item.snapshot ? <p className="article-summary">{item.snapshot}</p> : null}
-              {reason ? <p className="article-why text-muted">Why: {reason}</p> : null}
               {topics.length > 0 ? (
                 <div className="article-tags">
                   {topics.map((tag) => (
