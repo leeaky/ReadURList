@@ -2,7 +2,9 @@ import { AppFrame } from "@/components/AppFrame";
 import { TodayList, type FallenOff, type TodayPick } from "@/components/TodayList";
 import { isReadyItem } from "@/lib/item-edit";
 import { facetItemsFromPicks, subjectsFromItems } from "@/lib/filters";
+import { fetchReadyCorpus } from "@/lib/fetch-corpus";
 import { RANKING_TODAY_BLURB } from "@/lib/ranking-copy";
+import { weekLine, weekStats } from "@/lib/week";
 import {
   supabaseAdmin,
   type DailyPickRow,
@@ -11,6 +13,9 @@ import {
 } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
+
+type WeekDates = Pick<ItemRow, "read_at" | "skipped_at">;
+type WeekPickRow = { item_id: number; items: WeekDates | WeekDates[] | null };
 
 function asItem<T>(value: T | T[] | null): T | null {
   if (!value) return null;
@@ -33,14 +38,33 @@ export default async function TodayPage() {
     .from("items")
     .select("id", { count: "exact", head: true })
     .eq("ingest_status", "pending_body");
-  const [latest, ready, waiting] = await Promise.all([
+  // Is it working? Picks shown over the last 7 days, today included (stage 10).
+  const weekFrom = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const weekPromise = db
+    .from("daily_picks")
+    .select("item_id, items(read_at, skipped_at)")
+    .gte("run_on", weekFrom);
+  const [latest, ready, waiting, week, corpus] = await Promise.all([
     latestPromise,
     readyPromise,
     waitingPromise,
+    weekPromise,
+    fetchReadyCorpus(),
   ]);
   if (ready.error) {
     throw new Error(ready.error.message);
   }
+  if (week.error) {
+    throw new Error(week.error.message);
+  }
+  const weekPicks = ((week.data || []) as WeekPickRow[]).map((row) => {
+    const item = asItem(row.items);
+    return { item_id: row.item_id, read_at: item?.read_at ?? null, skipped_at: item?.skipped_at ?? null };
+  });
+  const weekText = weekLine(
+    weekStats(weekPicks, corpus, new Date(`${weekFrom}T00:00:00Z`)),
+    "Last 7 days",
+  );
   if (waiting.error) {
     throw new Error(waiting.error.message);
   }
@@ -111,6 +135,9 @@ export default async function TodayPage() {
         waitingOnUnfetched={waiting.count ?? 0}
         subjects={subjects}
       />
+      <section className="today-section week-panel" aria-label="Is it working?">
+        <p className="text-muted">{weekText}</p>
+      </section>
     </AppFrame>
   );
 }

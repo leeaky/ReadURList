@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from telegram import Bot
 
@@ -19,6 +19,7 @@ from readurlist.ingest.complete import complete_pending_bodies
 from readurlist.llm.base import LLMProvider
 from readurlist.rank.digest import should_send_digest
 from readurlist.rank.score import RankItem, build_day_list
+from readurlist.rank.week import week_line, week_stats
 from readurlist.tags.consolidate import maybe_consolidate_tags
 
 logger = logging.getLogger(__name__)
@@ -206,6 +207,9 @@ def format_digest(run_on: date, site_url: str) -> str:
         if fallen:
             lines.append("Fallen off since the last list")
             lines += [_fall_line(row, session.get(Item, row.item_id)) for row in fallen]
+        if run_on.weekday() == 0:  # Monday: one line on the week before (stage 10)
+            stats = week_stats(run_on - timedelta(days=7), run_on - timedelta(days=1))
+            lines.append("\n" + week_line(stats))
         return "\n".join(lines).strip()
     finally:
         session.close()

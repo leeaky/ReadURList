@@ -86,7 +86,7 @@ Only one process may poll a given token. A second `readurlist` (or any other cli
 | One or more `http(s)` URLs | Sequential `n/N` snapshots. Fetch/extract failure → stub + Unfetched link. |
 | `/start` | Confirms the allowlisted user and lists capture / digest / website. |
 | `/digest` | Completes pasted Unfetched bodies, consolidates tags if needed, ranks, and sends today's digest **only if it has not already been sent today**. |
-| Daily at `DIGEST_HOUR` | Same ranking job, unforced. Digest at most once per day. |
+| Daily at `DIGEST_HOUR` | Same ranking job, unforced. Digest at most once per day. On Mondays it ends with a "Last week" line: picks read of picks shown, the verdict, skipped, and the unread pile then → now. |
 | **Mark read · n** / **Skip · n** on an older digest | Marks that pick read, or skips it (leaves the queue without marking read). The daily list no longer has buttons — mark read or skip on the website's Today page. |
 
 Plain text with no URL gets a short usage hint. Non-allowlisted users get no reply.
@@ -231,7 +231,7 @@ npm run dev
 
 Point `web/.env.local` at a database you are willing to mutate. Mark read and skip write to that database. **Send to Unfetched** clears article text and queues fill-in — do not use it against production data from localhost.
 
-Three tabs: **Today** (the day’s list: Short reads and Long read, each pick with its reason, points per part and reading time, then Fallen off since the last list; sidebar is that day’s subjects/tags), **All** (library), **Unfetched** (stubs). Light/dark theme. `/unread` and `/topics` redirect into All.
+Three tabs: **Today** (the day’s list: Short reads and Long read, each pick with its reason, points per part and reading time, then Fallen off since the last list, then a "Last 7 days" line: picks read of picks shown, the verdict (working if at least half are read), skipped, and the unread pile then → now; sidebar is that day’s subjects/tags), **All** (library), **Unfetched** (stubs). Light/dark theme. `/unread` and `/topics` redirect into All.
 
 **All:** filters All / Unread / Stale 14+ / Read / Skipped, and a second row Any length / Short / Long (combines with the first). Each card shows its effort label, e.g. "Short · 4 min" (230 words a minute; short is under 15 minutes; no word count counts as short in the filter). Unread is the ranking queue (ready, not skipped). Cards can mark read, skip, or restore. Edit can overwrite headline, description, subject, and topics, or **Send to Unfetched** after confirm. **Organize** (button on All, not a tab) merges singleton labels, batch-edits subject/topics, and lists the oldest unread items.
 
