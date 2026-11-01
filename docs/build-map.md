@@ -313,6 +313,25 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 - **Verified:** 2026-11-01 — `uv run pytest -q`: 120 passed; `web/`: `npm test` 84 passed, `npx tsc --noEmit` clean, `npm run build` clean. Local database: "Last 7 days: read 1 of 5 picks (20%, below half: tune the ranking). Skipped 0. Unread pile 9 → 14."; today (Sunday) list has no weekly line. Dev site at 375 px: panel "… Unread pile 10 → 14." at the end of Today; no sideways scroll. Dev worker restarted on this code, so Monday 2026-11-02's dev list carries the line.
   2026-11-01 — Deploy: no database change; owner merged #17 (`2754953`) and ran `scripts/live-worker-update.ps1`; live folder on `2754953`; one live `readurlist.exe`, PID 25468, started 15:12, task result 0; Vercel production build on `2754953` succeeded. Check still to come: Monday 2026-11-02's list ends with "Last week: …" and Today shows the 7-day panel.
 
+### Stage 11 — arXiv papers get their real length
+- **What gets built:** An arXiv link's reading time comes from the full paper, not the abstract page, so papers land in the long section and show their real minutes.
+- **Why:** Owner, 2026-11-01: "the length of the read is only on the abstract for arxiv links. The underlying paper is a much longer read." (Chat 2026-11-01).
+- **Depends on:** Stage 4
+- **Produces:** correct Short / Long labels and sections for arXiv papers.
+- **Terms:** Effort label
+- **Status:** in progress
+- **Changed:** 2026-11-01 — Stage added at the owner's request after the build finished. Owner chose to fetch the full paper ("Fetch the full paper", over treating all arXiv as long or tagging only) and to keep the summary from the abstract ("Abstract, length from paper"): the safety scan and the model's input stay as they are.
+- **Tasks:**
+  - [x] (a) A new arXiv link (abs, pdf or html form) is counted from the full paper's PDF; the title and summary still come from the abstract page.
+    Detail: if the PDF can't be fetched or read, the abstract's count is kept, as today. Built: `ingest/arxiv.py` (`arxiv_id`, `paper_word_count`: PDF up to 40 MB, read with `pypdf`, words counted, text not kept); `ingest_url` reads any arXiv form from its abstract page. New dependency `pypdf`. Tests: `test_arxiv.py`.
+  - [x] (b) arXiv papers already saved get their length fixed once.
+    Detail: a one-off command the owner runs on the live folder after the deploy; it waits 3 seconds between papers, as arXiv asks. Built: `readurlist-arxiv-lengths` (ready items only; a paper whose PDF fails keeps its count). Test: `test_arxiv.py::test_one_off_fix_counts_saved_papers_from_their_pdf`.
+  - [ ] (c) Deploy (you): merge to main, update and restart the live worker, run the one-off fix, then check an arXiv paper on All shows Long and its real minutes.
+    Detail: no database change; merge → `scripts/live-worker-update.ps1` → one-off fix in the live folder.
+- **How we know:** on the local database, saving an arXiv abstract link stores the paper's word count (thousands of words, Long) while the summary matches the abstract; the one-off fix turns an old arXiv item from Short to Long.
+- **Issues:** none
+- **Verified:** 2026-11-01 — `uv run pytest -q`: 136 passed. Local database, real link `https://arxiv.org/abs/1706.03762`: saved ready, title "Attention Is All You Need", abstract 346 words, stored 6,111 words → long, 27 min. Reset to 346 and ran `readurlist-arxiv-lengths`: "counted from their PDF: 2; kept the abstract count: 0"; item back to 6,111.
+
 ## Blocks
 
 ### B1 — Stage 0: no room for a dev Supabase project (2026-11-01)

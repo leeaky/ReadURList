@@ -14,6 +14,7 @@ dependencies = [
   "pydantic>=2.0",
   "pydantic-settings>=2.0",
   "psycopg[binary]>=3.1",
+  "pypdf>=5.0",
 ]
 
 [project.optional-dependencies]
@@ -23,6 +24,7 @@ dev = ["pytest>=8.0"]
 readurlist = "readurlist.main:main"
 readurlist-digest = "readurlist.rank.run:main"
 readurlist-effort-backfill = "readurlist.effort:main"
+readurlist-arxiv-lengths = "readurlist.ingest.arxiv:main"
 
 [build-system]
 requires = ["setuptools>=68"]
