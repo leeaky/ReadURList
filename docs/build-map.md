@@ -230,7 +230,7 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 - **Depends on:** Stage 6
 - **Produces:** the page you use day to day.
 - **Terms:** Effort label, Fallen off
-- **Status:** in progress
+- **Status:** done
 - **Changed:** 2026-10-31 — Deploy task added for the owner (R-0009 §On the map); built only in dev from now on (stage 0).
 - **Tasks:**
   - [x] (a) Today shows a short section and a long section, each pick with its reason in words, its points per part (always visible, no tap) and its reading time.
@@ -241,11 +241,12 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
     Detail: as today (README §Website). Unchanged: Mark read and Skip in the opened card.
   - [x] (d) Today ends with a small Fallen off section: each dropped link with its cause in words and its points before and after.
     Detail: from stage 6 (b). Owner, 2026-10-31: "A" (options were: Fallen off section on Today / Telegram only). Built: "Fallen off since the last list" at the end of Today, from `fallen_off`: linked title, cause in words, "74 → 72 points" or "was 99 points" when it is no longer scored.
-  - [ ] (e) Deploy (you): merge to main so the website rebuilds, then check Today on your phone shows both sections with reasons, points, reading times and Fallen off.
+  - [x] (e) Deploy (you): merge to main so the website rebuilds, then check Today on your phone shows both sections with reasons, points, reading times and Fallen off.
     Detail: merge the stage's pull request; open Today on the live site on a phone.
 - **How we know:** on the local database at phone width, Today shows Short reads and Long read with each pick's reason, points and reading time, and ends with Fallen off.
 - **Issues:** none
 - **Verified:** 2026-11-01 — `web/`: `npm test` 74 passed, `npx tsc --noEmit` clean, `npm run build` clean. Dev site on the local database at 375 px: Short reads 3 cards, Long read 1 ("21 min read", "subject 52 + recency 2 = 54 points"), Fallen off 1 ("you read it · was 100 points"); opened card has Mark read and Skip; no sideways scroll.
+  2026-11-01 — Deploy: no database change; owner merged #11 (`69f6e06`), Vercel production build on `69f6e06` succeeded; owner checked Today on the phone ("Merged, looks good").
 
 ### Stage 8 — Telegram daily list
 - **What gets built:** Once a day Telegram sends the day's list in two sections, short and long, with a note at the bottom listing links that fell off and why.
