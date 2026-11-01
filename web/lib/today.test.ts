@@ -20,6 +20,10 @@ describe("Today pick details", () => {
       reasonWords("You keep saving Programming: 5 unread (subject 65 + recency 34 = 99)"),
       "You keep saving Programming: 5 unread",
     );
+    assert.equal(
+      reasonWords("You keep saving AI (129 unread in AI) (subject 65 + recency 25 = 90)"),
+      "You keep saving AI (129 unread in AI)",
+    );
     assert.equal(reasonWords("Saved today (subject 20 + recency 35 = 55)"), "Saved today");
     assert.equal(reasonWords("Plain reason"), "Plain reason");
   });
