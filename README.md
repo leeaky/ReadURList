@@ -231,7 +231,7 @@ npm run dev
 
 Point `web/.env.local` at a database you are willing to mutate. Mark read and skip write to that database. **Send to Unfetched** clears article text and queues fill-in — do not use it against production data from localhost.
 
-Three tabs: **Today** (ranked picks plus a short ranking explainer; sidebar is that day’s subjects/tags), **All** (library), **Unfetched** (stubs). Light/dark theme. `/unread` and `/topics` redirect into All.
+Three tabs: **Today** (the day’s list: Short reads and Long read, each pick with its reason, points per part and reading time, then Fallen off since the last list; sidebar is that day’s subjects/tags), **All** (library), **Unfetched** (stubs). Light/dark theme. `/unread` and `/topics` redirect into All.
 
 **All:** filters All / Unread / Stale 14+ / Read / Skipped. Unread is the ranking queue (ready, not skipped). Cards can mark read, skip, or restore. Edit can overwrite headline, description, subject, and topics, or **Send to Unfetched** after confirm. **Organize** (button on All, not a tab) merges singleton labels, batch-edits subject/topics, and lists the oldest unread items.
 

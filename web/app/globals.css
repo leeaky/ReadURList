@@ -1074,3 +1074,28 @@ section + section .section-title {
     width: 100%;
   }
 }
+
+.today-section {
+  margin-top: var(--space-4);
+}
+
+.today-heading {
+  font-size: 1rem;
+  margin: 0 0 var(--space-2);
+}
+
+.article-points {
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.fallen-list {
+  margin: 0;
+  padding-left: 1.2em;
+  font-size: 13px;
+}
+
+.fallen-list li {
+  margin-bottom: var(--space-1);
+  overflow-wrap: anywhere;
+}
