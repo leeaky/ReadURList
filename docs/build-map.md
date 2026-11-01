@@ -319,18 +319,19 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 - **Depends on:** Stage 4
 - **Produces:** correct Short / Long labels and sections for arXiv papers.
 - **Terms:** Effort label
-- **Status:** in progress
+- **Status:** done
 - **Changed:** 2026-11-01 — Stage added at the owner's request after the build finished. Owner chose to fetch the full paper ("Fetch the full paper", over treating all arXiv as long or tagging only) and to keep the summary from the abstract ("Abstract, length from paper"): the safety scan and the model's input stay as they are.
 - **Tasks:**
   - [x] (a) A new arXiv link (abs, pdf or html form) is counted from the full paper's PDF; the title and summary still come from the abstract page.
     Detail: if the PDF can't be fetched or read, the abstract's count is kept, as today. Built: `ingest/arxiv.py` (`arxiv_id`, `paper_word_count`: PDF up to 40 MB, read with `pypdf`, words counted, text not kept); `ingest_url` reads any arXiv form from its abstract page. New dependency `pypdf`. Tests: `test_arxiv.py`.
   - [x] (b) arXiv papers already saved get their length fixed once.
     Detail: a one-off command the owner runs on the live folder after the deploy; it waits 3 seconds between papers, as arXiv asks. Built: `readurlist-arxiv-lengths` (ready items only; a paper whose PDF fails keeps its count). Test: `test_arxiv.py::test_one_off_fix_counts_saved_papers_from_their_pdf`.
-  - [ ] (c) Deploy (you): merge to main, update and restart the live worker, run the one-off fix, then check an arXiv paper on All shows Long and its real minutes.
+  - [x] (c) Deploy (you): merge to main, update and restart the live worker, run the one-off fix, then check an arXiv paper on All shows Long and its real minutes.
     Detail: no database change; merge → `scripts/live-worker-update.ps1` → one-off fix in the live folder.
 - **How we know:** on the local database, saving an arXiv abstract link stores the paper's word count (thousands of words, Long) while the summary matches the abstract; the one-off fix turns an old arXiv item from Short to Long.
 - **Issues:** none
 - **Verified:** 2026-11-01 — `uv run pytest -q`: 136 passed. Local database, real link `https://arxiv.org/abs/1706.03762`: saved ready, title "Attention Is All You Need", abstract 346 words, stored 6,111 words → long, 27 min. Reset to 346 and ran `readurlist-arxiv-lengths`: "counted from their PDF: 2; kept the abstract count: 0"; item back to 6,111.
+  2026-11-01 — Deploy: no database change; owner merged #19 (`da90cf4`) and ran `scripts/live-worker-update.ps1`; one live `readurlist.exe`, PID 7204, started 16:26, task result 0. Owner ran `readurlist-arxiv-lengths` in the live folder: "arXiv papers counted from their PDF: 82; kept the abstract count: 2". One of the two, 2608.00858, was withdrawn by its author (PDF 404) and shows "Short · 1 min" on All. The run also printed pypdf font and figure warnings; counts unaffected.
 
 ## Blocks
 
@@ -409,6 +410,7 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 | 8 Telegram daily list | Yesterday A, B, C short and P long; read A, skipped B, saved 5 new short on a new subject. First answer: "3 new, P and C fallen off with reason" (wrong: the subject cap allows 2 new; P only competes with long items; A and B also fall off). Second answer: "short - 2 new + C, P stays, A & B fallen off but due to read or skipped". Matches (C stays unless another older item outscores it). | Context §Ranking (two-per-subject cap); stage 6 tasks (a), (b) | 2026-10-31 |
 | 9 Library tidy-up | Skip P on All, then restore a month later. First answer: "to be honest, i do not know"; explained from the sources. Explain-back: "once skipped, the url goes to a skipped list on the website. It can be restored but the scoring is lower due to recency." Matches. Owner then asked for a change: "I would suggest if restored, the date restarts to restoration date" (added to stage 5 (c)). | Context §Ranking (skip leaves the queue without marking read); README §Website (Skipped filter, restore) | 2026-10-31 |
 | 10 Is it working? | Week: 12 picks shown, 5 read, 3 skipped, 10 saved, pile 140 last Monday. First: "not sure i get the context of whether it is working"; explained (pile 140 + 10 − 5 − 3 = 142). Explain-back: "the pile did not shrink so no it did not work". Matches Context's test as written. Raised Q9: the pile measure mixes list quality with how much is saved. | Context §Success metric | 2026-10-31 |
+| 11 arXiv papers get their real length | During the live one-off fix, a paper's PDF came back "404 Not Found" (2608.00858). Owner looked it up: "Data-Driven Measures of High-Frequency - it is withdrawn by the author", and its card on All: "short 1min". Matches: no PDF, so the abstract's count is kept (stage 11 (a) Detail). | Stage 11 (a) Detail; live run output | 2026-11-01 |
 | 2–10 Deploy order (changed 2026-10-31) | Stage 4 merged an hour before its effort column is added to the live database: "the website will display errors when looking for the non-existent effort column in that hour". Matches; added: the live worker keeps running fine that hour because it only gets the new code at `git pull` and restart; done the right way round, the old site and worker simply ignore the new column until the merge, so nothing breaks. Covers the Deploy tasks and `Changed:` lines of stages 2–10; stage 1 changed only its dependency on stage 0, covered by the stage 0 row. | R-0009 §What "apart" means, §On the map; owner's deploy-order rule of 2026-10-31 | 2026-10-31 |
 
 ## Code overlay
