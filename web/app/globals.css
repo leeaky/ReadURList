@@ -1099,3 +1099,9 @@ section + section .section-title {
   margin-bottom: var(--space-1);
   overflow-wrap: anywhere;
 }
+
+.week-panel {
+  border-top: 1px solid var(--color-divider);
+  padding-top: var(--space-3);
+  font-size: 13px;
+}

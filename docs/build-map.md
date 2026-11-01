@@ -295,18 +295,22 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 - **Depends on:** Stages 6, 7, 8
 - **Produces:** a weekly line in Monday's Telegram list and a 7-day panel on Today.
 - **Terms:** Unread queue
-- **Status:** not started
+- **Status:** in progress
 - **Changed:** 2026-10-31 — Deploy task added for the owner (R-0009 §On the map); built only in dev from now on (stage 0). Deploy order set by the owner the same day: backup and migrate live before merging.
+  2026-11-01 — Owner chose to work out the pile a week ago from each item's dates rather than record it daily ("Work it out from dates"): no database change; slightly off for items skipped then restored, or deleted.
 - **Tasks:**
-  - [ ] (a) Monday's Telegram list ends with one line on last week: picks read, picks skipped, and the unread pile then and now.
-    Detail: e.g. "Last week: read 5 of 12 picks (42%, below half: tune the ranking). Skipped 3. Unread pile 140 → 142." Owner, 2026-10-31: "C" (options were Telegram line / Today panel / both) (Q5).
-  - [ ] (b) Today shows the same numbers for the last 7 days in a small panel.
-  - [ ] (c) The verdict is the read rate: working if you read at least half the picks shown; the pile size is shown for background only.
+  - [x] (a) Monday's Telegram list ends with one line on last week: picks read, picks skipped, and the unread pile then and now.
+    Detail: e.g. "Last week: read 5 of 12 picks (42%, below half: tune the ranking). Skipped 3. Unread pile 140 → 142." Owner, 2026-10-31: "C" (options were Telegram line / Today panel / both) (Q5). Built: `rank/week.py` `week_stats` + `week_line`; `format_digest` adds the line when the list's day is a Monday (the 7 days before it). Tests: `test_week.py`.
+  - [x] (b) Today shows the same numbers for the last 7 days in a small panel.
+    Detail: built `web/lib/week.ts` (same counts) and a panel at the end of Today: "Last 7 days: …", today included. The website counts from UTC midnight, the worker from local midnight, so "pile then" can differ by one or two. Tests: `web/lib/week.test.ts`.
+  - [x] (c) The verdict is the read rate: working if you read at least half the picks shown; the pile size is shown for background only.
     Detail: read rate = distinct picks shown in the week that were marked read ÷ distinct picks shown. Owner, 2026-10-31: "A" (options were read rate ≥ half / Context's test as written / no pass mark) (Q9). Replaces Context §Success metric's pile test under the source-conflict rule.
     Detail: same counts as (a), rolling 7 days (Q5).
   - [ ] (d) Deploy (you): back up the live database and apply any database change, then merge to main, update and restart the live worker, and check Monday's message ends with last week's line and Today shows the 7-day panel.
     Detail: backup and migration only if the stage adds one, before the merge → merge (website rebuilds) → worker update as in stage 2.
+- **How we know:** on the local database the 7-day line reads "read N of M picks (P%, working / below half: tune the ranking)", Today's panel shows the same, and only a Monday list ends with "Last week: …".
 - **Issues:** none
+- **Verified:** 2026-11-01 — `uv run pytest -q`: 120 passed; `web/`: `npm test` 84 passed, `npx tsc --noEmit` clean, `npm run build` clean. Local database: "Last 7 days: read 1 of 5 picks (20%, below half: tune the ranking). Skipped 0. Unread pile 9 → 14."; today (Sunday) list has no weekly line. Dev site at 375 px: panel "… Unread pile 10 → 14." at the end of Today; no sideways scroll. Dev worker restarted on this code, so Monday 2026-11-02's dev list carries the line.
 
 ## Blocks
 
