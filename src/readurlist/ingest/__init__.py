@@ -3,6 +3,7 @@ from __future__ import annotations
 from readurlist.config import Settings
 from readurlist.db import Item, get_session
 from readurlist.effort import word_count
+from readurlist.ingest.arxiv import abs_url, arxiv_id, paper_word_count
 from readurlist.ingest.extract import ExtractError, FetchError, extract_article
 from readurlist.ingest.summarize import summarize_article
 from readurlist.ingest.untrusted import assess
@@ -86,8 +87,10 @@ def ingest_url(
     finally:
         session.close()
 
+    paper_id = arxiv_id(url)
     try:
-        title_hint, text = extract_article(url)
+        # An arXiv link of any form is read from its abstract page.
+        title_hint, text = extract_article(abs_url(paper_id) if paper_id else url)
     except FetchError as exc:
         return _save_stub(url=url, title=url, note=str(exc), note_clean=note_clean)
     except ExtractError as exc:
@@ -134,7 +137,7 @@ def ingest_url(
             topics=list(result.topics),
             keywords=list(result.keywords),
             extracted_text=text,
-            word_count=word_count(text),
+            word_count=(paper_id and paper_word_count(paper_id)) or word_count(text),
             priority=result.priority,
             note=note_clean,
             ingest_status=INGEST_READY,

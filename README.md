@@ -164,6 +164,14 @@ readurlist-effort-backfill
 
 It only fills items still missing a count, so running it again is harmless.
 
+**arXiv papers:** for an arXiv link (abs, pdf or html), the title and summary come from the abstract page, but the word count comes from the full paper's PDF, so papers show their real reading time. If the PDF can't be fetched, the abstract's count is kept. Papers saved before this change get their count once with:
+
+```bash
+readurlist-arxiv-lengths
+```
+
+It pauses 3 seconds between papers, as arXiv asks.
+
 ### Migrate an old local SQLite file
 
 ```bash
