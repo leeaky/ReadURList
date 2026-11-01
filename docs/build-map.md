@@ -277,14 +277,16 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 - **Depends on:** Stage 2
 - **Produces:** a tidy library.
 - **Terms:** Unread queue, Skip, Subject / topics / keywords
-- **Status:** not started
+- **Status:** in progress
 - **Changed:** 2026-10-31 — Deploy task added for the owner (R-0009 §On the map); built only in dev from now on (stage 0).
 - **Tasks:**
-  - [ ] (a) All, Organize and Unfetched keep working as they do now, and also show each item's effort label.
-    Detail: add effort label to cards and filters.
+  - [x] (a) All, Organize and Unfetched keep working as they do now, and also show each item's effort label.
+    Detail: add effort label to cards and filters. Owner, 2026-11-01: card label "Short · 4 min"; filter as a second chip row "Any length · Short · Long" that combines with the status chips (both recommended options). Built: `web/lib/effort.ts` (same rule as the worker), `?length=short|long` on `/all`, label on All cards and on Organize's oldest-unread rows; `word_count` added to the All/Organize query. Unfetched shows no label: those items have no text yet. Tests: `web/lib/effort.test.ts`.
   - [ ] (b) Deploy (you): merge to main so the website rebuilds, then check cards on All show short or long.
     Detail: merge the stage's pull request; open `/all` on the live site.
+- **How we know:** on the local database, All cards show "Short · N min" or "Long · N min", Short / Long chips narrow the list and keep the status filter, Organize's oldest unread shows the label, Unfetched still works.
 - **Issues:** none
+- **Verified:** 2026-11-01 — `web/`: `npm test` 81 passed, `npx tsc --noEmit` clean, `npm run build` clean. Dev site on the local database at 375 px: `/all?status=unread&length=long` → "3 articles · Unread · Long", labels "Long · 23 min", "Long · 24 min", "Long · 21 min"; chip links keep the other filter; Organize oldest unread "2026-10-11 · Long · 21 min" …; Unfetched 5 cards; no sideways scroll.
 
 ### Stage 10 — Is it working?
 - **What gets built:** A way for you to see whether the new list helps: how many picks you read, and whether the unread pile is shrinking.

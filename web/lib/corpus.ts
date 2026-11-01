@@ -1,7 +1,7 @@
 export const CORPUS_PAGE_SIZE = 1000;
 
 export const READY_CORPUS_SELECT =
-  "id, url, title, snapshot, subject, topics, keywords, created_at, read_at, skipped_at, ingest_status";
+  "id, url, title, snapshot, subject, topics, keywords, created_at, read_at, skipped_at, ingest_status, word_count";
 
 export function corpusPageRange(
   pageIndex: number,
