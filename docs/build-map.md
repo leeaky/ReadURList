@@ -340,7 +340,7 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 - **Depends on:** Stage 11
 - **Produces:** correct Short / Long labels and sections for papers saved from paper sites.
 - **Terms:** Effort label
-- **Status:** in progress
+- **Status:** done
 - **Changed:** 2026-11-01 — Stage added at the owner's request after stage 11. For papers already saved, the owner chose to recheck only items shown as Short ("Only items shown as Short").
   2026-11-01 — After the live one-off fix (2 papers named a PDF that couldn't be read: Nature, MIT DSpace), owner: "for any url that has a citation URL, assume long and put '>45 min' as a placeholder length"; chose a stand-in count over a true ">45 min" label (no database change). A page whose PDF tag points to a PDF that can't be downloaded or read is now stored as 45 minutes' worth of words (10,350), so it shows Long · 45 min; the one-off fix does the same and prints a fourth count. arXiv is unchanged (a withdrawn paper really is short). Tests: `test_paper_pdf.py`. Local run, `https://www.nature.com/articles/s41562-017-0064`: page 1,646 words, PDF unreadable (PdfStreamError) → stored 10,350, long, 45 min; one-off fix after a reset: back to 10,350. `uv run pytest -q`: 154 passed. Deploy: merge → `scripts/live-worker-update.ps1` → rerun `readurlist-paper-lengths` in the live folder.
 - **Tasks:**
@@ -348,11 +348,12 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
     Detail: the tag is `citation_pdf_url`. Same rules as stage 11: PDF up to 40 MB, its text is counted and not kept, never shown to the model; if the PDF can't be fetched or read (some sites block downloads), the page's count is kept and one line says why. Detail: built: `extract.pdf_link` reads the tag (relative links resolved, http(s) only); `extract_article` now also returns it; `arxiv.pdf_word_count` counts any PDF with stage 11's rules; an arXiv link never falls through to its abstract page's tag. Tests: `test_paper_pdf.py`, `test_arxiv.py`.
   - [x] (b) Saved non-arXiv items shown as Short get their length fixed once.
     Detail: a one-off command the owner runs on the live folder after the deploy; it re-reads each Short item's page for the tag, pausing between pages, and recounts only those that have one. Detail: built: `readurlist-paper-lengths` (ready, non-arXiv, Short only; 2 seconds between pages; prints counted / no PDF tag / kept). Test: `test_paper_pdf.py::test_one_off_fix_rechecks_short_paper_pages`.
-  - [ ] (c) Deploy (you): merge to main, update and restart the live worker, run the one-off fix, then check a paper from another site on All shows its real minutes.
+  - [x] (c) Deploy (you): merge to main, update and restart the live worker, run the one-off fix, then check a paper from another site on All shows its real minutes.
     Detail: no database change; merge → `scripts/live-worker-update.ps1` → one-off fix in the live folder.
 - **How we know:** on the local database, saving a paper page with a `citation_pdf_url` tag stores the PDF's word count while the summary matches the page; the one-off fix turns an old Short paper item Long and leaves a plain Short article as it was.
 - **Issues:** none
 - **Verified:** 2026-11-01 — `uv run pytest -q`: 154 passed. Local database, real link `https://aclanthology.org/N19-1423/`: saved ready, title "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding", page 1,062 words, stored 10,160 words → long, 44 min. Reset to the page count and ran the one-off fix: counted 1, no PDF tag 1, kept 13 (local test items on example.com, each one line "page could not be fetched"); item back to 10,160.
+  2026-11-01 — Deploy: no database change; owner merged #21 and #22 (`d19b2c5`) and ran `scripts/live-worker-update.ps1`; one live `readurlist.exe`, PID 25884, started 21:05. Owner ran `.\.venv\Scripts\readurlist-paper-lengths.exe` in the live folder: "Short items counted from their PDF: 1; no PDF tag: 101; kept the page count: 32".
 
 ## Blocks
 
