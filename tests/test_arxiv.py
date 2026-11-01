@@ -179,3 +179,29 @@ def test_one_off_fix_counts_saved_papers_from_their_pdf(tmp_path, monkeypatch):
     assert words["https://arxiv.org/abs/2410.00001"] == 8000
     assert words["https://arxiv.org/abs/2410.00002"] == 120
     assert words["https://example.com/a"] == 120
+
+
+def test_a_missing_pdf_is_one_plain_line(monkeypatch, caplog):
+    monkeypatch.setattr(arxiv, "_TRANSPORT", _transport(None, []))
+    with caplog.at_level("WARNING"):
+        assert paper_word_count("2608.00858") is None
+    lines = [r for r in caplog.records if r.name.startswith("readurlist")]
+    assert [r.getMessage() for r in lines] == [
+        "arXiv 2608.00858 (https://arxiv.org/abs/2608.00858): PDF not found (HTTP 404); kept the abstract count"
+    ]
+    assert all(r.exc_info is None for r in lines)  # no traceback
+
+
+def test_a_pdf_without_text_says_so(monkeypatch, caplog):
+    monkeypatch.setattr(arxiv, "_TRANSPORT", _transport(_pdf(""), []))
+    with caplog.at_level("WARNING"):
+        assert paper_word_count("2410.12345") is None
+    assert [r.getMessage() for r in caplog.records if r.name.startswith("readurlist")] == [
+        "arXiv 2410.12345 (https://arxiv.org/abs/2410.12345): no text in the PDF; kept the abstract count"
+    ]
+
+
+def test_pdf_reader_notes_are_hidden():
+    import logging
+
+    assert logging.getLogger("pypdf").getEffectiveLevel() > logging.ERROR

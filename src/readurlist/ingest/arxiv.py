@@ -17,6 +17,8 @@ from pypdf import PdfReader
 from readurlist.effort import word_count
 
 logger = logging.getLogger(__name__)
+# pypdf reports every odd font or figure it meets; the count doesn't need them.
+logging.getLogger("pypdf").setLevel(logging.CRITICAL)
 
 # New ids (2410.12345, optional version) and old ones (hep-th/9901001).
 _ARXIV = re.compile(
@@ -40,22 +42,35 @@ def abs_url(paper_id: str) -> str:
 def paper_word_count(paper_id: str) -> int | None:
     """Words in the paper's PDF, or None if it can't be fetched or read."""
     url = f"https://arxiv.org/pdf/{paper_id}"
+
+    def skip(reason: str) -> None:
+        logger.warning("arXiv %s (%s): %s; kept the abstract count", paper_id, abs_url(paper_id), reason)
+
     try:
         with httpx.Client(follow_redirects=True, timeout=_TIMEOUT, transport=_TRANSPORT) as client:
             with client.stream("GET", url) as response:
+                if response.status_code == 404:
+                    skip("PDF not found (HTTP 404)")
+                    return None
                 response.raise_for_status()
                 body = bytearray()
                 for chunk in response.iter_bytes():
                     body += chunk
                     if len(body) > _MAX_PDF_BYTES:
-                        logger.warning("arXiv PDF %s is over %s bytes; skipped", paper_id, _MAX_PDF_BYTES)
+                        skip(f"PDF over {_MAX_PDF_BYTES // (1024 * 1024)} MB")
                         return None
         reader = PdfReader(io.BytesIO(bytes(body)))
         words = sum(word_count(page.extract_text() or "") for page in reader.pages)
-    except Exception:
-        logger.warning("Could not count words in arXiv PDF %s", paper_id, exc_info=True)
+    except httpx.HTTPError as exc:
+        skip(f"PDF could not be downloaded ({exc.__class__.__name__})")
         return None
-    return words or None
+    except Exception as exc:
+        skip(f"PDF could not be read ({exc.__class__.__name__})")
+        return None
+    if not words:
+        skip("no text in the PDF")
+        return None
+    return words
 
 
 def fix_saved_papers(*, sleep=time.sleep) -> tuple[int, int]:

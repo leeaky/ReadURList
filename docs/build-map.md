@@ -321,6 +321,7 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 - **Terms:** Effort label
 - **Status:** done
 - **Changed:** 2026-11-01 — Stage added at the owner's request after the build finished. Owner chose to fetch the full paper ("Fetch the full paper", over treating all arXiv as long or tagging only) and to keep the summary from the abstract ("Abstract, length from paper"): the safety scan and the model's input stay as they are.
+  2026-11-01 — After the live one-off fix (owner: "ok to the tidy up"): a paper whose PDF is skipped now prints one line naming it, its abstract link and the reason (not found, over 40 MB, can't be downloaded or read, no text), and the PDF reader's font and figure notes are hidden. Tests: `test_arxiv.py`. Local run: "arXiv 2608.00858 (https://arxiv.org/abs/2608.00858): PDF not found (HTTP 404); kept the abstract count", then the totals; nothing else printed.
 - **Tasks:**
   - [x] (a) A new arXiv link (abs, pdf or html form) is counted from the full paper's PDF; the title and summary still come from the abstract page.
     Detail: if the PDF can't be fetched or read, the abstract's count is kept, as today. Built: `ingest/arxiv.py` (`arxiv_id`, `paper_word_count`: PDF up to 40 MB, read with `pypdf`, words counted, text not kept); `ingest_url` reads any arXiv form from its abstract page. New dependency `pypdf`. Tests: `test_arxiv.py`.
