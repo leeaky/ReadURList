@@ -331,7 +331,7 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 - **How we know:** on the local database, saving an arXiv abstract link stores the paper's word count (thousands of words, Long) while the summary matches the abstract; the one-off fix turns an old arXiv item from Short to Long.
 - **Issues:** none
 - **Verified:** 2026-11-01 — `uv run pytest -q`: 136 passed. Local database, real link `https://arxiv.org/abs/1706.03762`: saved ready, title "Attention Is All You Need", abstract 346 words, stored 6,111 words → long, 27 min. Reset to 346 and ran `readurlist-arxiv-lengths`: "counted from their PDF: 2; kept the abstract count: 0"; item back to 6,111.
-  2026-11-01 — Deploy: no database change; owner merged #19 (`da90cf4`) and ran `scripts/live-worker-update.ps1`; one live `readurlist.exe`, PID 7204, started 16:26, task result 0. Owner ran `readurlist-arxiv-lengths` in the live folder: "arXiv papers counted from their PDF: 82; kept the abstract count: 2". Both had no PDF (HTTP 404): 2608.00858, withdrawn by its author, shows "Short · 1 min" on All; and 2603.28371. The run also printed pypdf font and figure warnings; counts unaffected.
+  2026-11-01 — Deploy: no database change; owner merged #19 (`da90cf4`) and ran `scripts/live-worker-update.ps1`; one live `readurlist.exe`, PID 7204, started 16:26, task result 0. Owner ran `readurlist-arxiv-lengths` in the live folder: "arXiv papers counted from their PDF: 82; kept the abstract count: 2". Both had no PDF (HTTP 404): 2608.00858, withdrawn by its author, shows "Short · 1 min" on All; and 2603.28371, also withdrawn (owner checked). The run also printed pypdf font and figure warnings; counts unaffected.
 
 ## Blocks
 
