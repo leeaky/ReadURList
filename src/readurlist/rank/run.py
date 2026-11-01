@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from datetime import date, datetime
 
-from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Bot
 
 from readurlist.config import Settings
 from readurlist.db import (
@@ -156,10 +157,11 @@ FALL_CAUSES = {
 
 def _fall_line(row: FallenOff, item: Item | None) -> str:
     where = item.url if item else f"item {row.item_id}"
-    line = f"{where} — {FALL_CAUSES.get(row.cause, row.cause)}"
-    if row.points_after is not None:
-        line += f" ({row.points_before:g} → {row.points_after} points)"
-    return line
+    return f"{where} — {FALL_CAUSES.get(row.cause, row.cause)}"
+
+
+# The stored reason ends with its points; Telegram gives the words only (stage 8).
+_POINTS = re.compile(r"\s*\(subject \d+ \+ recency \d+ = \d+\)\s*$")
 
 
 def _pick_line(n: int, pick: DailyPick, item: Item) -> str:
@@ -167,10 +169,10 @@ def _pick_line(n: int, pick: DailyPick, item: Item) -> str:
     snap = (item.snapshot or "").split("\n")[0]
     if len(snap) > 240:
         snap = snap[:237] + "…"
-    return f"{n}. {title}\n{snap}\nWhy: {pick.reason}\n"
+    return f"{n}. {title}\n{snap}\nWhy: {_POINTS.sub('', pick.reason)}\n"
 
 
-def format_digest(run_on: date, site_url: str) -> tuple[str, InlineKeyboardMarkup | None]:
+def format_digest(run_on: date, site_url: str) -> str:
     """The day's list: short section, long section (or where the papers are), fallen off."""
     session = get_session()
     try:
@@ -181,9 +183,8 @@ def format_digest(run_on: date, site_url: str) -> tuple[str, InlineKeyboardMarku
             .all()
         )
         if not picks:
-            return "No unread articles to rank today.", None
+            return "No unread articles to rank today."
         lines = ["Today's reads\n"]
-        buttons: list[list[InlineKeyboardButton]] = []
         n = 0
         for section, heading in (("short", "Short reads"), ("long", "Long read")):
             lines.append(heading)
@@ -194,12 +195,6 @@ def format_digest(run_on: date, site_url: str) -> tuple[str, InlineKeyboardMarku
                     continue
                 n += 1
                 lines.append(_pick_line(n, pick, item))
-                buttons.append(
-                    [
-                        InlineKeyboardButton(f"Mark read · {n}", callback_data=f"read:{item.id}"),
-                        InlineKeyboardButton(f"Skip · {n}", callback_data=f"skip:{item.id}"),
-                    ]
-                )
             if section == "long" and not rows:
                 waiting = (
                     session.query(Item).filter(Item.ingest_status == "pending_body").count()
@@ -211,8 +206,7 @@ def format_digest(run_on: date, site_url: str) -> tuple[str, InlineKeyboardMarku
         if fallen:
             lines.append("Fallen off since the last list")
             lines += [_fall_line(row, session.get(Item, row.item_id)) for row in fallen]
-        markup = InlineKeyboardMarkup(buttons) if buttons else None
-        return "\n".join(lines).strip(), markup
+        return "\n".join(lines).strip()
     finally:
         session.close()
 
@@ -253,11 +247,10 @@ async def run_digest_job(
         logger.info("Force digest: ranking updated, Telegram suppressed (already sent %s)", today)
         return False
 
-    text, markup = format_digest(today, settings.site_url)
+    text = format_digest(today, settings.site_url)
     await bot.send_message(
         chat_id=settings.telegram_user_id,
         text=text,
-        reply_markup=markup,
         disable_web_page_preview=True,
     )
     _record_digest_run(today)

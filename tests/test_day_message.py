@@ -26,10 +26,10 @@ def test_message_has_short_and_long_sections(tmp_path):
     _add("https://example.com/a", "a", DAY1)
     _add("https://example.com/l", "b", DAY1, words=5000)
     persist_ranking(now=DAY1)
-    text, _ = format_digest(DAY1.date(), SITE)
+    text = format_digest(DAY1.date(), SITE)
     assert text.index("Short reads") < text.index("Title a") < text.index("Long read")
     assert text.index("Long read") < text.index("Title l")
-    assert "Why: " in text
+    assert "Why: You keep saving a (1 unread in a)\n" in text
 
 
 def test_empty_long_section_points_to_unfetched(tmp_path):
@@ -38,7 +38,7 @@ def test_empty_long_section_points_to_unfetched(tmp_path):
     _add("https://example.com/p1", "", DAY1, words=None, status="pending_body")
     _add("https://example.com/p2", "", DAY1, words=None, status="pending_body")
     persist_ranking(now=DAY1)
-    text, _ = format_digest(DAY1.date(), SITE)
+    text = format_digest(DAY1.date(), SITE)
     assert "No long read ready. 2 papers are waiting on Unfetched: https://readurlist.example/unfetched" in text
 
 
@@ -55,7 +55,51 @@ def test_fallen_off_note_lists_each_link_with_its_cause(tmp_path):
         _add(f"https://example.com/n{n}", f"new{n}", DAY2)
     persist_ranking(now=DAY2)
 
-    text, _ = format_digest(DAY2.date(), SITE)
+    text = format_digest(DAY2.date(), SITE)
     note = text[text.index("Fallen off"):]
     assert "https://example.com/r — you read it" in note
-    assert "https://example.com/o — outscored by newer saves (74 → 72 points)" in note
+    assert "https://example.com/o — outscored by newer saves" in note
+
+
+def test_message_gives_reasons_in_words_without_points(tmp_path):
+    init_db(f"sqlite:///{tmp_path / 't.db'}")
+    read = _add("https://example.com/r", "a", DAY1)
+    _add("https://example.com/o", "c", DAY1 - timedelta(days=3))
+    persist_ranking(now=DAY1)
+    session = get_session()
+    session.get(Item, read).read_at = DAY2
+    session.commit()
+    session.close()
+    for n in range(3):
+        _add(f"https://example.com/n{n}", f"new{n}", DAY2)
+    persist_ranking(now=DAY2)
+
+    text = format_digest(DAY2.date(), SITE)
+    assert "Fallen off" in text
+    assert "points" not in text
+    assert "subject " not in text and "recency" not in text
+
+
+def test_daily_message_has_no_buttons(tmp_path):
+    import asyncio
+
+    from readurlist.config import Settings
+    from readurlist.rank.run import run_digest_job
+
+    init_db(f"sqlite:///{tmp_path / 't.db'}")
+    _add("https://example.com/a", "a", datetime.now(timezone.utc))
+
+    class FakeBot:
+        def __init__(self):
+            self.sent = []
+
+        async def send_message(self, **kwargs):
+            self.sent.append(kwargs)
+
+    bot = FakeBot()
+    settings = Settings(telegram_bot_token="x", telegram_user_id=1, groq_api_key="x",
+                        database_url="sqlite://", site_url=SITE)
+    assert asyncio.run(run_digest_job(bot, settings))  # type: ignore[arg-type]
+    assert len(bot.sent) == 1
+    assert bot.sent[0].get("reply_markup") is None
+    assert "Short reads" in bot.sent[0]["text"]

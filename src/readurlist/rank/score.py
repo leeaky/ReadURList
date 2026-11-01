@@ -94,7 +94,8 @@ def _when(item: RankItem, age_days: float) -> str:
 
 def _reason(item: RankItem, *, same_subject: int, age_days: float, subject: int, recency: int) -> str:
     if subject >= recency:
-        lead = f"You keep saving {item.subject or 'this subject'}: {same_subject} unread"
+        name = item.subject or "this subject"
+        lead = f"You keep saving {name} ({same_subject} unread in {name})"
     else:
         lead = _when(item, age_days)
     return f"{lead} (subject {subject} + recency {recency} = {subject + recency})"

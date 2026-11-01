@@ -181,7 +181,7 @@ def test_reason_names_the_biggest_part_and_shows_the_points():
     items = [_item(i, subject="llms", days_ago=5) for i in range(1, 5)]
     items.append(_item(9, subject="climate", days_ago=0))
     picks = {p.item_id: p for p in score_unread(items, now=NOW)}
-    assert picks[1].reason.startswith("You keep saving llms: 4 unread")
+    assert picks[1].reason.startswith("You keep saving llms (4 unread in llms)")
     assert "subject 65 + recency 6 = 71" in picks[1].reason
     assert picks[9].reason.startswith("Saved today")
     assert "subject 16 + recency 35 = 51" in picks[9].reason

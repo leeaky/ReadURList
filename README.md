@@ -87,7 +87,7 @@ Only one process may poll a given token. A second `readurlist` (or any other cli
 | `/start` | Confirms the allowlisted user and lists capture / digest / website. |
 | `/digest` | Completes pasted Unfetched bodies, consolidates tags if needed, ranks, and sends today's digest **only if it has not already been sent today**. |
 | Daily at `DIGEST_HOUR` | Same ranking job, unforced. Digest at most once per day. |
-| **Mark read · n** / **Skip · n** on a digest | Marks that pick read, or skips it (leaves the queue without marking read). |
+| **Mark read · n** / **Skip · n** on an older digest | Marks that pick read, or skips it (leaves the queue without marking read). The daily list no longer has buttons — mark read or skip on the website's Today page. |
 
 Plain text with no URL gets a short usage hint. Non-allowlisted users get no reply.
 
