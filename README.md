@@ -233,7 +233,7 @@ Point `web/.env.local` at a database you are willing to mutate. Mark read and sk
 
 Three tabs: **Today** (the day’s list: Short reads and Long read, each pick with its reason, points per part and reading time, then Fallen off since the last list; sidebar is that day’s subjects/tags), **All** (library), **Unfetched** (stubs). Light/dark theme. `/unread` and `/topics` redirect into All.
 
-**All:** filters All / Unread / Stale 14+ / Read / Skipped. Unread is the ranking queue (ready, not skipped). Cards can mark read, skip, or restore. Edit can overwrite headline, description, subject, and topics, or **Send to Unfetched** after confirm. **Organize** (button on All, not a tab) merges singleton labels, batch-edits subject/topics, and lists the oldest unread items.
+**All:** filters All / Unread / Stale 14+ / Read / Skipped, and a second row Any length / Short / Long (combines with the first). Each card shows its effort label, e.g. "Short · 4 min" (230 words a minute; short is under 15 minutes; no word count counts as short in the filter). Unread is the ranking queue (ready, not skipped). Cards can mark read, skip, or restore. Edit can overwrite headline, description, subject, and topics, or **Send to Unfetched** after confirm. **Organize** (button on All, not a tab) merges singleton labels, batch-edits subject/topics, and lists the oldest unread items.
 
 **Unfetched:** lists items the worker could not retrieve. Open **Paste article**, paste text or upload a PDF (max 3.5 MB — Vercel serverless limit). Saved text is ingested on the worker at the next daily digest (or when you run `/digest` / `readurlist-digest`). Stubs are hidden from Today and All until ingest completes.
 

@@ -15,6 +15,7 @@ import {
   tagsFromItems,
   uniqueTopics,
 } from "@/lib/filters";
+import { effortLabel } from "@/lib/effort";
 import { oldestUnreadQueue, pinSingletonLabels } from "@/lib/organize";
 import type { ItemRow } from "@/lib/supabase";
 
@@ -273,6 +274,7 @@ export function OrganizeView({ items }: { items: ItemRow[] }) {
                   </span>
                   <span className="article-date text-muted">
                     {item.created_at.slice(0, 10)}
+                    {effortLabel(item.word_count) ? ` · ${effortLabel(item.word_count)}` : ""}
                   </span>
                   <form action={setSkipState.bind(null, item.id, true)}>
                     <button type="submit" className="btn btn-secondary">

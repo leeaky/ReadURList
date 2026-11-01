@@ -1,6 +1,7 @@
 import { AppFrame } from "@/components/AppFrame";
 import { AllList } from "@/components/AllList";
 import { fetchReadyCorpus } from "@/lib/fetch-corpus";
+import { lengthFromParam } from "@/lib/effort";
 import { subjectsFromItems, type FilterStatus } from "@/lib/filters";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ function statusFromParams(params: { status?: string; filter?: string }): FilterS
 export default async function AllPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; filter?: string }>;
+  searchParams: Promise<{ status?: string; filter?: string; length?: string }>;
 }) {
   const params = await searchParams;
   const items = await fetchReadyCorpus();
@@ -28,7 +29,7 @@ export default async function AllPage({
       facetItems={items}
       initialStatus={statusFromParams(params)}
     >
-      <AllList items={items} subjects={subjects} />
+      <AllList items={items} subjects={subjects} length={lengthFromParam(params.length)} />
     </AppFrame>
   );
 }
