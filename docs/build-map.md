@@ -302,7 +302,7 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
   - [x] (a) Monday's Telegram list ends with one line on last week: picks read, picks skipped, and the unread pile then and now.
     Detail: e.g. "Last week: read 5 of 12 picks (42%, below half: tune the ranking). Skipped 3. Unread pile 140 → 142." Owner, 2026-10-31: "C" (options were Telegram line / Today panel / both) (Q5). Built: `rank/week.py` `week_stats` + `week_line`; `format_digest` adds the line when the list's day is a Monday (the 7 days before it). Tests: `test_week.py`.
   - [x] (b) Today shows the same numbers for the last 7 days in a small panel.
-    Built: `web/lib/week.ts` (same counts) and a panel at the end of Today: "Last 7 days: …", today included. The website counts from UTC midnight, the worker from local midnight, so "pile then" can differ by one or two. Tests: `web/lib/week.test.ts`.
+    Detail: built `web/lib/week.ts` (same counts) and a panel at the end of Today: "Last 7 days: …", today included. The website counts from UTC midnight, the worker from local midnight, so "pile then" can differ by one or two. Tests: `web/lib/week.test.ts`.
   - [x] (c) The verdict is the read rate: working if you read at least half the picks shown; the pile size is shown for background only.
     Detail: read rate = distinct picks shown in the week that were marked read ÷ distinct picks shown. Owner, 2026-10-31: "A" (options were read rate ≥ half / Context's test as written / no pass mark) (Q9). Replaces Context §Success metric's pile test under the source-conflict rule.
     Detail: same counts as (a), rolling 7 days (Q5).
