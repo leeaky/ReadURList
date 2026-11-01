@@ -172,6 +172,14 @@ readurlist-arxiv-lengths
 
 It pauses 3 seconds between papers, as arXiv asks.
 
+**Papers from other sites:** any page that names its PDF in the standard `citation_pdf_url` tag (journals, ACL Anthology, bioRxiv and most paper sites) gets its word count from that PDF the same way. Sites that block downloads keep the page's count. Items saved before this change and shown as Short are rechecked once with:
+
+```bash
+readurlist-paper-lengths
+```
+
+It re-reads each Short item's page, 2 seconds apart, and recounts only those that name a PDF.
+
 ### Migrate an old local SQLite file
 
 ```bash

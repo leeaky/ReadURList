@@ -102,7 +102,7 @@ def test_arxiv_link_takes_its_length_from_the_paper(tmp_path, monkeypatch):
 
     def fake_extract(url, timeout=30.0):
         fetched.append(url)
-        return "Compost paper", ABSTRACT
+        return "Compost paper", ABSTRACT, None
 
     monkeypatch.setattr("readurlist.ingest.extract_article", fake_extract)
     monkeypatch.setattr("readurlist.ingest.paper_word_count", lambda paper_id: 9000)
@@ -121,7 +121,7 @@ def test_arxiv_link_takes_its_length_from_the_paper(tmp_path, monkeypatch):
 def test_arxiv_link_keeps_the_abstract_count_when_the_paper_fails(tmp_path, monkeypatch):
     db = f"sqlite:///{tmp_path / 't.db'}"
     init_db(db)
-    monkeypatch.setattr("readurlist.ingest.extract_article", lambda url, timeout=30.0: ("T", ABSTRACT))
+    monkeypatch.setattr("readurlist.ingest.extract_article", lambda url, timeout=30.0: ("T", ABSTRACT, None))
     monkeypatch.setattr("readurlist.ingest.paper_word_count", lambda paper_id: None)
 
     item, _ = ingest_url("https://arxiv.org/abs/2410.12345", OneAnswerLLM(), _settings(db))  # type: ignore[arg-type]
@@ -132,7 +132,7 @@ def test_arxiv_link_keeps_the_abstract_count_when_the_paper_fails(tmp_path, monk
 def test_other_links_do_not_fetch_a_paper(tmp_path, monkeypatch):
     db = f"sqlite:///{tmp_path / 't.db'}"
     init_db(db)
-    monkeypatch.setattr("readurlist.ingest.extract_article", lambda url, timeout=30.0: ("T", ABSTRACT))
+    monkeypatch.setattr("readurlist.ingest.extract_article", lambda url, timeout=30.0: ("T", ABSTRACT, None))
 
     def boom(paper_id):
         raise AssertionError("no paper fetch for ordinary links")
@@ -205,3 +205,18 @@ def test_pdf_reader_notes_are_hidden():
     import logging
 
     assert logging.getLogger("pypdf").getEffectiveLevel() > logging.ERROR
+
+
+def test_an_arxiv_paper_is_not_fetched_again_from_its_page_tag(tmp_path, monkeypatch):
+    db = f"sqlite:///{tmp_path / 't.db'}"
+    init_db(db)
+    pdf = "https://arxiv.org/pdf/2608.00858"
+    monkeypatch.setattr("readurlist.ingest.extract_article", lambda url, timeout=30.0: ("T", ABSTRACT, pdf))
+    monkeypatch.setattr("readurlist.ingest.paper_word_count", lambda paper_id: None)  # withdrawn
+
+    def boom(pdf_url, *, page_url):
+        raise AssertionError("the arXiv PDF was already tried")
+
+    monkeypatch.setattr("readurlist.ingest.pdf_word_count", boom)
+    item, _ = ingest_url("https://arxiv.org/abs/2608.00858", OneAnswerLLM(), _settings(db))  # type: ignore[arg-type]
+    assert item.word_count == 120

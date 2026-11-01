@@ -39,7 +39,7 @@ def test_ingest_url_sees_existing_subjects(tmp_path, monkeypatch):
 
     monkeypatch.setattr(
         "readurlist.ingest.extract_article",
-        lambda url: ("Hint", "Body text " * 40),
+        lambda url: ("Hint", "Body text " * 40, None),
     )
     settings = Settings(
         telegram_bot_token="x",
