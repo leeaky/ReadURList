@@ -254,7 +254,7 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
 - **Depends on:** Stage 6
 - **Produces:** the daily Telegram message.
 - **Terms:** Daily job, Fallen off
-- **Status:** in progress
+- **Status:** done
 - **Changed:** 2026-10-31 — Deploy task added for the owner (R-0009 §On the map); built only in dev from now on (stage 0). Deploy order set by the owner the same day: backup and migrate live before merging.
   2026-11-01 — Task (c) added: owner found "You keep saving AI: 129 unread" unclear when "unread" wrapped to the next line, and asked for "You keep saving <subject> (XXX unread in <subject>)"; folded into this stage (owner: "Yes, start 8"). Deploy becomes (d).
 - **Tasks:**
@@ -264,11 +264,12 @@ Before any feature work, dev and live are separated: the live worker, bot, datab
     Detail: remove the Mark read / Skip inline buttons and their handlers' use in the daily list. Owner, 2026-10-31: "B" (options were keep both buttons / drop them) (Q3). Built: the daily message is sent with no buttons. The bot still answers taps on buttons in older messages. Test: `test_day_message.py::test_daily_message_has_no_buttons`.
   - [x] (c) A pick's reason reads "You keep saving <subject> (N unread in <subject>)".
     Detail: owner, 2026-11-01. Built in `rank/score.py`, so Telegram and Today both show it from the next list after deploy; lists already built keep their old wording. Tests: `test_rank.py`, `web/lib/today.test.ts`.
-  - [ ] (d) Deploy (you): merge to main, update and restart the live worker, then check the next daily Telegram message has two sections, a fallen-off note and no buttons.
+  - [x] (d) Deploy (you): merge to main, update and restart the live worker, then check the next daily Telegram message has two sections, a fallen-off note and no buttons.
     Detail: merge → worker update as in stage 2; the message comes at the next daily run (or `/digest` if today's hasn't been sent).
 - **How we know:** on the local database the daily message has Short reads, Long read and Fallen off, reasons in words with the new wording, no points and no buttons.
 - **Issues:** none
 - **Verified:** 2026-11-01 — `uv run pytest -q`: 116 passed; `web/`: `npm test` 74 passed. Local database: rebuilt today's list; message has Short reads 3, Long read 1, "Why: You keep saving Programming (5 unread in Programming)", Fallen off "https://example.com/code/small-functions — you read it"; no "points" in the text. Dev worker restarted on this code.
+  2026-11-01 — Deploy: no database change; owner merged #13 (`1ca965e`) and ran `scripts/live-worker-update.ps1` from the dev folder (the live folder did not have the script yet; from now on it does); live folder on `1ca965e`; one live `readurlist.exe`, PID 11812, started 14:34, task result 0; owner sent `/digest`: "Ranking updated. Digest already sent today". Check still to come: the next daily Telegram message has two sections, a fallen-off note and no buttons.
 
 ### Stage 9 — Library tidy-up (All, Organize, Unfetched)
 - **What gets built:** The website's All tab (filters, edit, mark read, skip, restore), Organize (merge stray labels, batch edits, oldest unread) and Unfetched stay as they work today.
